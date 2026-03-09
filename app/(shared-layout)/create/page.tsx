@@ -1,16 +1,18 @@
 "use client"
 
+import { createBlogAction } from "@/app/actions";
+
 import { postSchema } from "@/app/schemas/blog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/convex/_generated/api";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useConvexAuth, useMutation } from "convex/react";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+
 import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -19,9 +21,6 @@ import z from "zod";
 export default function (){
     const {isAuthenticated} = useConvexAuth();
     const [isPending, startTransition] = useTransition();
-    const mutation = useMutation(api.posts.createPost);
-    console.log("mutatuion", mutation.toString());
-    const router = useRouter();
     const form = useForm(
         {
             resolver: zodResolver(postSchema),
@@ -37,16 +36,31 @@ export default function (){
             toast.error("Your must sign in to publish your blog");
             return;
         }
-        startTransition(()=>{
-            mutation({
-                body: values.content,
-                title: values.title,
+        startTransition(async ()=>{
+            // mutation({
+            //     body: values.content,
+            //     title: values.title,
             
-            });
+            // });
 
-            toast.success("Blog posted successfully");
-            router.push("/");
+            // both are public
+            // so they have to be protected i.e authentication, validation of data
+
+            // server actions should be treated as private function
+            // internal request
+            // e.g. only mobile app
+            await createBlogAction(values);
+
+            // public function
+            // e.g. mobile as well as desktop app
+            // no-type safety
+            // await fetch('/api/create-blog',{method: "POST"});
+
+            // toast.success("Blog posted successfully");
+            // router.push("/");
             
+            
+
         });
 
     }
