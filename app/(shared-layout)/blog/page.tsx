@@ -1,15 +1,19 @@
-"use client";
+// "use client";
 
 import Image from "next/image";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { api } from "@/convex/_generated/api"
-import { useQuery } from "convex/react"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import Link  from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "@/convex/_generated/api";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function blogPage() {
     
-    const data = useQuery(api.posts.getPosts);
+    // const data = useQuery(api.posts.getPosts);
+
+    
 
     return (
         <div className="py-12">
@@ -17,7 +21,38 @@ export default function blogPage() {
                 <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Our Blogs</h1>
                 <p className="pt-4 max-w-2xl mx-auto text-xl text-muted-foreground">Insights, thoughts and ideas to embrace</p>
             </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Suspense fallback={<SkeletonCard/>}>
+                <LoadBlogList/>
+            </Suspense>
+        </div>
+    )
+}
+
+
+export function SkeletonCard() {
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, index) => (
+            <div className="flex flex-col space-y-3" key={index}>
+                <Skeleton className="h-48 w-full rounded-xl" />
+                <div className="space-y-2 flex flex-col">
+                    <Skeleton className="h-6 w-3/4"/>
+                    <Skeleton className="h-4 w-full"/>
+                    <Skeleton className="h-4 w-2/4"/>
+                </div>
+            </div>
+        ))}
+    </div>
+  )
+}
+
+
+
+async function LoadBlogList(){
+    const data = await fetchQuery(api.posts.getPosts);
+
+    return (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {data?.map((item) => (
                     <Card key={item._id} className="pt-0">
                         <div className="relative h-48 w-full overflow-hidden">
@@ -35,7 +70,7 @@ export default function blogPage() {
                                 </h1>
                             </Link>
                             <p className="text-muted-foreground line-clamp-4">
-                                {item.body}...
+                                {item.body}
                             </p>
                         </CardContent>
                         <CardFooter>
@@ -47,6 +82,5 @@ export default function blogPage() {
                     </Card>
                 ))}
             </div>
-        </div>
     )
-}
+} 
