@@ -8,9 +8,15 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
         protocol: "https",
         port: ""
-      }
+      },
+      {
+        hostname: "zealous-bass-963.convex.cloud",
+        protocol: "https",
+        port: "",
+      },
     ]
   },
+
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb",

@@ -57,10 +57,10 @@ async function LoadBlogList(){
                     <Card key={item._id} className="pt-0">
                         <div className="relative h-48 w-full overflow-hidden">
                             <Image
-                                src="https://images.unsplash.com/photo-1761839256951-10c4468c3621?q=80&w=1471&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                                src={item.imageURL ?? "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D/*  */"}
                                 fill
                                 alt="Blog image"
-                                className="rounded-t-lg"
+                                className="rounded-t-lg object-cover"
                             />
                         </div>
                         <CardContent>
