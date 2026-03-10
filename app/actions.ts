@@ -12,26 +12,58 @@ import { getToken } from "@/lib/auth-server";
 // server function internally uses POST method
 // so we use it only for mutation of data not fetching
 export async function createBlogAction(values: z.infer<typeof postSchema>) {
-    const parsed  = postSchema.safeParse(values);
+    
 
-    if(!parsed.success){
-        throw new Error("Something went wrong");
-    }
+    try{
+        const parsed  = postSchema.safeParse(values);
 
-    const token = await getToken();
+        if(!parsed.success){
+            throw new Error("Something went wrong");
+        }
 
-    await fetchMutation(
+        const token = await getToken();
+
+        const imageURL = await fetchMutation(api.posts.getImageUploadURL, {},{token});
+      
+        const uploadResult  = await fetch(imageURL,{
+            method: "POST",
+            headers: {
+                "Content-Type": parsed.data.image.type
+            },
+
+            body: parsed.data.image,
+        })
+
+        if(!uploadResult.ok){
+            return {
+                    error: 'Failed to upload image'
+                };
+            
+        }
+
+        const {storageId} = await uploadResult.json();
+
+        await fetchMutation(
         api.posts.createPost, {
             body: parsed.data.content,
-            title: parsed.data.title
+            title: parsed.data.title,
+            imageStorageId: storageId,
         },{
             token
         }
     );
+    
+    }catch{
+        return {
+                    error: 'Failed to create post'
+                };
+    }
+
+    
 
     //redirect from server side
     // userouter only works on client component
     
-    return redirect("/");
+    return redirect("/blog");
 
 }

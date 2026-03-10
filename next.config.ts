@@ -10,7 +10,12 @@ const nextConfig: NextConfig = {
         port: ""
       }
     ]
-  }
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "20mb",
+    },
+  },
 };
 
 export default nextConfig;
