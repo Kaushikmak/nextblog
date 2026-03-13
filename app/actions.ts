@@ -6,6 +6,7 @@ import { fetchMutation } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { redirect } from "next/navigation";
 import { getToken } from "@/lib/auth-server";
+import { revalidatePath } from "next/cache";
 
 
 // server functions are used to perform server side logic and can be called from client components
@@ -52,6 +53,7 @@ export async function createBlogAction(values: z.infer<typeof postSchema>) {
             token
         }
     );
+        
     
     }catch{
         return {
@@ -59,7 +61,8 @@ export async function createBlogAction(values: z.infer<typeof postSchema>) {
                 };
     }
 
-    
+    // revalidate the page after creating a new post, so that the new post is visible on the blog page without needing to refresh the page.
+    revalidatePath("/blog");
 
     //redirect from server side
     // userouter only works on client component
