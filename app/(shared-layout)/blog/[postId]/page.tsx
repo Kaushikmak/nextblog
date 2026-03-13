@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator"
+import { CommentSection } from "@/components/web/commentSection";
 
 interface PostIdRouteProps{
     params: Promise<{
@@ -35,7 +36,7 @@ export default async function BlogPostPage({params}: PostIdRouteProps){
                 <ArrowLeft/>
                 back to blog page
             </Link>
-            <div className="relative w-full h-[400px] mv-8 rounded-xl overflow-hidden shodow-sm">
+            <div className="relative w-full h-100 mv-8 rounded-xl overflow-hidden shodow-sm">
                 <Image 
                 fill
                 src={post.imageURL ?? "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D/*  */"
@@ -61,7 +62,7 @@ export default async function BlogPostPage({params}: PostIdRouteProps){
 
                 <Separator className="my-8" />
 
-                
+                <CommentSection />
 
         </div>
     )
