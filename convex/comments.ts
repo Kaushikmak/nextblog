@@ -33,7 +33,7 @@ export const createComment = mutation({
 
         return await ctx.db.insert("comments",{
             postId: args.postId,
-            body: args.postId,
+            body: args.body,
             authorId: user._id,
             authorName: user.name
         });
