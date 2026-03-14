@@ -7,7 +7,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator"
 import { CommentSection } from "@/components/web/commentSection";
-import { preload } from "react-dom";
+import { Metadata } from "next";
+import { PostPresence } from "@/components/web/postPresence";
+import { getToken } from "@/lib/auth-server";
 
 interface PostIdRouteProps{
     params: Promise<{
@@ -16,13 +18,37 @@ interface PostIdRouteProps{
 }
 
 
+export const generateMetadata = async ({params}: PostIdRouteProps): Promise<Metadata> => {
+    const {postId} = await params;
+
+    
+
+    const post = await fetchQuery(api.posts.getPostById,{postId: postId});
+
+    if(!post){
+        return {
+            title: "Post not found",
+            description: "The post you are looking for does not exist."
+        }
+    }
+
+    return {
+        title: post.title,
+        description: post.body.slice(0, 160),
+    }
+}
+
+
 export default async function BlogPostPage({params}: PostIdRouteProps){
     const {postId} = await params;
 
+    const token = await getToken();
+
     // quries run in parallel
-    const [post, preloadedComments ]  = await Promise.all([
+    const [post, preloadedComments, userId ]  = await Promise.all([
                 await fetchQuery(api.posts.getPostById,{postId: postId}),
                 await preloadQuery(api.comments.getCommentsByPostId,{postId: postId}),
+                await fetchQuery(api.presence.getuserId,{}, {token})
     ]);
 
 
@@ -56,9 +82,13 @@ export default async function BlogPostPage({params}: PostIdRouteProps){
                 <h1 className="text-4xl font-bold tracking-tight pt-10 text-foreground">
                     {post.title}
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                    Posted on: {new Date(post._creationTime).toLocaleDateString()}
-                </p>
+                <div className="flex items-center gap-2">
+                    <p className="text-sm text-muted-foreground">
+                        Posted on: {new Date(post._creationTime).toLocaleDateString()}
+                    </p>
+                    {userId && <PostPresence postId={post._id} userId={userId} />}
+                    
+                </div>
             </div>
 
                 <Separator className="my-8"/>

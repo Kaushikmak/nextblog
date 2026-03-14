@@ -8,12 +8,19 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Metadata } from "next";
 
 // This page is rendered as static, so it can be cached by the CDN and served faster to users.
 export const dynamic = "force-static";
 
 // revalidate the page every 30 seconds, so that the content is updated without needing to redeploy the app.
 export const revalidate = 30;
+
+
+export const metadata: Metadata = {
+    title: "Next Blog - Insights, thoughts and ideas to embrace",
+    description: "Insights, thoughts and ideas to embrace",
+};
 
 
 export default function blogPage() {
@@ -60,14 +67,16 @@ async function LoadBlogList(){
 
     return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {data?.map((item) => (
+                {data?.map((item, index) => (
                     <Card key={item._id} className="pt-0">
                         <div className="relative h-48 w-full overflow-hidden">
                             <Image
                                 src={item.imageURL ?? "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D/*  */"}
                                 fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 alt="Blog image"
                                 className="rounded-t-lg object-cover"
+                                priority={index < 3}
                             />
                         </div>
                         <CardContent>
