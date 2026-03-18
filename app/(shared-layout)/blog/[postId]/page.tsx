@@ -60,7 +60,7 @@ export default async function BlogPostPage({params}: PostIdRouteProps){
     }
 
     return (
-        <div className="max-w-3xl mx-auto py-8 px-4 animate-in fade-in duration-500 relative">
+        <div className="max-w-10xl mx-auto py-8 px-4 animate-in fade-in duration-500 relative">
             <Link href="/blog" className={buttonVariants({variant: "ghost", size: "sm", className: "mb-4"})}>
                 <ArrowLeft/>
                 back to blog page
