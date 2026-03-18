@@ -34,7 +34,7 @@ export default function blogPage() {
                 <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Our Blogs</h1>
                 <p className="pt-4 max-w-2xl mx-auto text-xl text-muted-foreground">Insights, thoughts and ideas to embrace</p>
             </div>
-            // no suspense needed as we are caching
+            {/* // no suspense needed as we are caching */}
             {/* <Suspense fallback={<SkeletonCard/>}> */}
                 <LoadBlogList/>
             {/* </Suspense> */}
