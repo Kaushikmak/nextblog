@@ -6,13 +6,15 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 
 
 // This page is rendered as static, so it can be cached by the CDN and served faster to users.
-export const dynamic = "force-static";
+// export const dynamic = "force-static";   
 
 // revalidate the page every 30 seconds, so that the content is updated without needing to redeploy the app.
-export const revalidate = 30;
+// export const revalidate = 30;
 
 export const metadata = {
     title: "Next-Blog | Blog",
@@ -32,9 +34,10 @@ export default function blogPage() {
                 <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Our Blogs</h1>
                 <p className="pt-4 max-w-2xl mx-auto text-xl text-muted-foreground">Insights, thoughts and ideas to embrace</p>
             </div>
-            <Suspense fallback={<SkeletonCard/>}>
+            // no suspense needed as we are caching
+            {/* <Suspense fallback={<SkeletonCard/>}> */}
                 <LoadBlogList/>
-            </Suspense>
+            {/* </Suspense> */}
         </div>
     )
 }
@@ -60,6 +63,10 @@ export function SkeletonCard() {
 
 
 async function LoadBlogList(){
+    // await  connection();
+    "use cache"
+    cacheLife("hours");
+    cacheTag('blog');
     const data = await fetchQuery(api.posts.getPosts);
 
     return (
