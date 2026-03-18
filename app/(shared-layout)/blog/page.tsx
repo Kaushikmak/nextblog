@@ -8,12 +8,18 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { title } from "process";
 
 // This page is rendered as static, so it can be cached by the CDN and served faster to users.
 export const dynamic = "force-static";
 
 // revalidate the page every 30 seconds, so that the content is updated without needing to redeploy the app.
 export const revalidate = 30;
+
+export const metadata = {
+    title: "Next-Blog | Blog",
+    description: "Read our latest blogs and insights on various topics. Stay informed and inspired with our engaging content.", 
+};
 
 
 export default function blogPage() {

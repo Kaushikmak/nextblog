@@ -15,6 +15,24 @@ interface PostIdRouteProps{
     }>;
 }
 
+export async function generateMetadata({params}: PostIdRouteProps){
+    const {postId} = await params;
+
+    const post = await fetchQuery(api.posts.getPostById,{postId: postId});
+
+    if(!post){
+        return {
+            title: "Post not found",
+            description: "The post you are looking for does not exist.",
+        }
+    }
+
+    return {
+        title: `Next-Blog | ${post.title}`,
+        description: post.body.slice(0, 160),
+    }
+};
+
 
 export default async function BlogPostPage({params}: PostIdRouteProps){
     const {postId} = await params;
