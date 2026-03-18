@@ -10,7 +10,8 @@ import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { useParams } from "next/navigation";
 import { Id } from "@/convex/_generated/dataModel";
-import { Preloaded, useMutation, usePreloadedQuery, useQuery } from "convex/react";
+// Add useConvexAuth to the imports
+import { Preloaded, useMutation, usePreloadedQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import z from "zod";
 import { toast } from "sonner";
@@ -18,16 +19,17 @@ import { useTransition } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "../ui/separator";
 import { Spinner } from "@/components/ui/spinner"
+import Link from "next/link";
 
 export function CommentSection(props: {preLoadedComments: Preloaded<typeof api.comments.getCommentsByPostId>}){
 
     const params = useParams<{postId: Id<"posts">}>(); 
-
     const data  =  usePreloadedQuery(props.preLoadedComments);
+    const [isPending, startTransition] = useTransition();
 
-    const [isPending,startTransition] = useTransition()
+    // Initialize the authentication state hook
+    const { isAuthenticated, isLoading } = useConvexAuth();
 
-    // now we are using mutation on cleint side
     const createComment  = useMutation(api.comments.createComment);
 
     const form  = useForm({
@@ -36,21 +38,21 @@ export function CommentSection(props: {preLoadedComments: Preloaded<typeof api.c
             body: "",
             postId: params.postId,
         }
-    })
+    });
 
     async function onSubmit(values: z.infer<typeof commentSchema>){
         startTransition(async () => {
             try{
-            await createComment(values);
-            form.reset();
-            toast.success("comment posted");
-        }catch{
-            toast.error("Failed to create comment");
-        }
+                await createComment(values);
+                form.reset();
+                toast.success("comment posted");
+            } catch {
+                toast.error("Failed to create comment");
+            }
         })
     }
 
-    if(data==undefined){
+    if(data == undefined){
         return (
             <div className="flex flex-col items-center gap-4">
                 <Button disabled size="sm">
@@ -67,35 +69,47 @@ export function CommentSection(props: {preLoadedComments: Preloaded<typeof api.c
                 <MessagesSquare className="size-5"/>
                 <h2 className="text-xl text-bold">{data.length} comments</h2>
             </CardHeader>
-            <CardContent className=" space-y-8">
-                <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
-                    <Controller 
-                        name="body"
-                        control={form.control}
-                        render={({field,fieldState})=>{return (
-                            <Field>
-                                <FieldLabel>what you think about this blog...</FieldLabel>
-                                <Textarea 
-                                    aria-invalid={fieldState.invalid}
-                                    {...field}
-                                />
-                                {fieldState.invalid  && (<FieldError errors={[fieldState.error]}/>)}
-                                 
-                            </Field>
-                        )}}
+            <CardContent className="space-y-8">
 
-                    />
-                    <Button className="mt-1 mb-3" disabled={isPending}>{
-                            isPending ? (
+                {isLoading ? (
+                    <div className="flex justify-center p-4">
+                        <Spinner />
+                    </div>
+                ) : isAuthenticated ? (
+                    <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+                        <Controller 
+                            name="body"
+                            control={form.control}
+                            render={({field, fieldState}) => { return (
+                                <Field>
+                                    <FieldLabel>what you think about this blog...</FieldLabel>
+                                    <Textarea 
+                                        aria-invalid={fieldState.invalid}
+                                        {...field}
+                                    />
+                                    {fieldState.invalid && (<FieldError errors={[fieldState.error]}/>)}
+                                </Field>
+                            )}}
+                        />
+                        <Button className="mt-1 mb-3" disabled={isPending}>
+                            {isPending ? (
                                 <>
                                     <Loader2 className="size-4 animate-spin" />
-                                    <span>posting you comment</span>
+                                    <span>posting your comment</span>
                                 </>
                             ) : (
                                 <span>comment</span>
-                            )
-                        }</Button>
-                </form>
+                            )}
+                        </Button>
+                    </form>
+                ) : (
+                    <div className="flex flex-col items-center justify-center p-6 border rounded-lg bg-muted/30 space-y-3">
+                        <p className="text-sm text-muted-foreground">You must be logged in to leave a comment.</p>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="/auth/login">Log In</Link>
+                        </Button>
+                    </div>
+                )}
 
                 {data?.length > 0 && <Separator />}
 
@@ -105,7 +119,7 @@ export function CommentSection(props: {preLoadedComments: Preloaded<typeof api.c
                                 <div className="flex gap-4" key={comment._id}>
                                     <Avatar className="size-10 shrink-0">
                                         <AvatarImage 
-                                        src={`https://avatar.vercel.sh/${comment.authorName}}`} 
+                                        src={`https://avatar.vercel.sh/${comment.authorName}`} 
                                         alt={comment.authorName}
                                         />
                                         <AvatarFallback>

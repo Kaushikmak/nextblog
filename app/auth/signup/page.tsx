@@ -91,6 +91,14 @@ export default function Signup()
                     </FieldGroup>
                 </form>
             </CardContent>
+            <CardFooter>
+                <Button 
+                    className="items-center w-full"
+                    onClick={() => router.push("/auth/login")}
+                >
+                    Already have account? Login
+                </Button>
+            </CardFooter>
         </Card>
     );
 }

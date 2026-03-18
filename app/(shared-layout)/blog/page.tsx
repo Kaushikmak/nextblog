@@ -1,5 +1,3 @@
-// "use client";
-
 import Image from "next/image";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import Link  from "next/link";
@@ -8,7 +6,7 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { title } from "process";
+
 
 // This page is rendered as static, so it can be cached by the CDN and served faster to users.
 export const dynamic = "force-static";

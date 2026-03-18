@@ -49,7 +49,6 @@ export default async function BlogPostPage({params}: PostIdRouteProps){
     ]);
 
 
-
     if(!post){
         return (
             <div>

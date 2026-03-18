@@ -2,17 +2,19 @@
 
 import { LogInSchema, SignUpSchema } from "@/app/schemas/auth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
+
 
 export default function Login(){
     const [isPending, startTransition] = useTransition()
@@ -81,6 +83,14 @@ export default function Login(){
                     </FieldGroup>
                 </form>
             </CardContent>
+            <CardFooter>
+                <Button 
+                    className="items-center w-full"
+                    onClick={() => router.push("/auth/signup")}
+                >
+                    New here? Create Account
+                </Button>
+            </CardFooter>
         </Card>
     );
 }
