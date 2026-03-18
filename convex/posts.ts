@@ -13,7 +13,7 @@ export const createPost = mutation({
 
     const blogArticle = await ctx.db.insert("posts",{
         body: args.body,
-        title: args.body,
+        title: args.title,
         authorId: user._id,
         imageStorageId: args.imageStorageId,
     });
