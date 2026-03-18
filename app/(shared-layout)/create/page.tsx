@@ -76,7 +76,7 @@ export default function (){
                     Create, Share, Explore your thoughts
                 </p>
             </div>
-            <Card className="w-full max-w-xl mx-auto">
+            <Card className="w-full max-w-5xl mx-auto">
                 <CardHeader>
                     <CardTitle>Create Blog Article</CardTitle>
                     <CardDescription>Create a new blog article</CardDescription>
