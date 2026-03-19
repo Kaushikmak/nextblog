@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
         port: ""
       },
       {
-        hostname: "zealous-bass-963.convex.cloud",
+        hostname: "third-antelope-154.convex.cloud",
         protocol: "https",
         port: "",
       },
