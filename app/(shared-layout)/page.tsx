@@ -27,7 +27,7 @@ export default function Home() {
         <div className="relative z-10 max-w-4xl px-2">
           <div className="inline-flex items-center rounded-full border border-border bg-background/60 backdrop-blur-sm px-3 py-1 text-sm font-medium text-muted-foreground mb-6">
             <Code2 className="h-4 w-4 mr-2 text-primary" />
-            V 0.1.0-alpha
+            V 0.1
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground mb-6">
@@ -68,51 +68,6 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <Card className="bg-card border-border hover:border-primary/50 transition-colors duration-300">
-            <CardHeader>
-              <Code2 className="h-10 w-10 text-primary mb-4" />
-              <CardTitle>Code Support</CardTitle>
-              <CardDescription>
-                Write clean code snippets easily.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Our editor supports markdown and syntax highlighting so your code 
-                is always easy to read.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border hover:border-primary/50 transition-colors duration-300">
-            <CardHeader>
-              <BookOpen className="h-10 w-10 text-primary mb-4" />
-              <CardTitle>Build a Portfolio</CardTitle>
-              <CardDescription>Document what you learn.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Keep a record of your engineering progress and share it with 
-                potential employers or peers.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border hover:border-primary/50 transition-colors duration-300">
-            <CardHeader>
-              <Users className="h-10 w-10 text-primary mb-4" />
-              <CardTitle>Community</CardTitle>
-              <CardDescription>Connect with other students.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Read what others are building and exchange feedback through 
-                simple comments.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
       </section>
     </div>
   );
