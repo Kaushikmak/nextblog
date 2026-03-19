@@ -95,7 +95,7 @@ export function SearchInput() {
         <Search className="size-3.5" />
         <span className="hidden sm:inline">Search</span>
         <span className="hidden sm:flex items-center gap-0.5 ml-1">
-          <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">⌘</kbd>
+          <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">Ctrl</kbd>
           <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">K</kbd>
         </span>
       </button>
