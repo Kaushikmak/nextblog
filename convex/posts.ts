@@ -4,7 +4,13 @@ import { authComponent } from "./auth";
 import { Doc } from "./_generated/dataModel";
 
 export const createPost = mutation({
-  args: { title: v.string(), body: v.string(), imageStorageId: v.id("_storage") },
+  args: { 
+      title: v.string(), 
+      body: v.string(), 
+      imageStorageId: v.optional(v.id("_storage")),
+      wordCount: v.number(),
+      readTime: v.number()
+  },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
 
@@ -17,6 +23,8 @@ export const createPost = mutation({
         title: args.title,
         authorId: user._id,
         imageStorageId: args.imageStorageId,
+        wordCount: args.wordCount,
+        readTime: args.readTime,
     });
         return blogArticle;
     },

@@ -6,70 +6,61 @@ import { fetchMutation } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { redirect } from "next/navigation";
 import { getToken } from "@/lib/auth-server";
-import { revalidatePath, updateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
-
-// server functions are used to perform server side logic and can be called from client components
-// server function internally uses POST method
-// so we use it only for mutation of data not fetching
 export async function createBlogAction(values: z.infer<typeof postSchema>) {
-    
+    try {
+        const parsed = postSchema.safeParse(values);
 
-    try{
-        const parsed  = postSchema.safeParse(values);
-
-        if(!parsed.success){
-            throw new Error("Something went wrong");
+        if (!parsed.success) {
+            throw new Error("Validation failed");
         }
 
         const token = await getToken();
+        let storageId = undefined;
 
-        const imageURL = await fetchMutation(api.posts.getImageUploadURL, {},{token});
-      
-        const uploadResult  = await fetch(imageURL,{
-            method: "POST",
-            headers: {
-                "Content-Type": parsed.data.image.type
-            },
+        if (parsed.data.image) {
+            const imageURL = await fetchMutation(api.posts.getImageUploadURL, {}, { token });
+          
+            const uploadResult = await fetch(imageURL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": parsed.data.image.type
+                },
+                body: parsed.data.image,
+            });
 
-            body: parsed.data.image,
-        })
+            if (!uploadResult.ok) {
+                return { error: 'Failed to upload cover image' };
+            }
 
-        if(!uploadResult.ok){
-            return {
-                    error: 'Failed to upload image'
-                };
-            
+            const jsonResponse = await uploadResult.json();
+            storageId = jsonResponse.storageId;
         }
 
-        const {storageId} = await uploadResult.json();
+        const plainText = parsed.data.content.replace(/<[^>]*>?/gm, '');
+        const wordsArray = plainText.trim().split(/\s+/).filter(word => word.length > 0);
+        const wordCount = wordsArray.length;
+
+        const readTime = Math.ceil(wordCount / 225) || 1;
 
         await fetchMutation(
-        api.posts.createPost, {
-            body: parsed.data.content,
-            title: parsed.data.title,
-            imageStorageId: storageId,
-        },{
-            token
-        }
-    );
+            api.posts.createPost, 
+            {
+                body: parsed.data.content,
+                title: parsed.data.title,
+                imageStorageId: storageId,
+                wordCount: wordCount,
+                readTime: readTime,
+            }, 
+            { token }
+        );
         
-    
-    }catch{
-        return {
-                    error: 'Failed to create post'
-                };
+    } catch (error) {
+        console.error("Failed to create post:", error);
+        return { error: 'Failed to create post' };
     }
 
-    // revalidate the page after creating a new post, so that the new post is visible on the blog page without needing to refresh the page.
-    // use only without revalidate
-    // revalidatePath("/blog");
-
     updateTag("blog");
-
-    //redirect from server side
-    // userouter only works on client component
-    
     return redirect("/blog");
-
 }

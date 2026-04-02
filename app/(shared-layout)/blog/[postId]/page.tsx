@@ -88,9 +88,9 @@ export default async function BlogPostPage({params}: PostIdRouteProps){
 
                 <Separator className="my-8"/>
 
-                <p className="text-lg leading-relaxed text-foreground/90 whitespace-pre-wrap">
-                    {post.body}
-                </p>
+                    <article className="prose dark:prose-invert lg:prose-xl max-w-none px-2 sm:px-0">
+                        <div dangerouslySetInnerHTML={{ __html: post.body }} />
+                    </article>
 
                 <Separator className="my-8" />
 
