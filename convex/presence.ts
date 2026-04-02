@@ -6,6 +6,8 @@ import { authComponent } from "./auth";
 
 export const presence = new Presence(components.presence);
 
+// next-log2/convex/presence.ts
+
 export const heartbeat = mutation({
   args: {
     roomId: v.string(),
@@ -14,14 +16,20 @@ export const heartbeat = mutation({
     interval: v.number(),
   },
   handler: async (ctx, { roomId, userId, sessionId, interval }) => {
-    // TODO: Add your auth checks here.
+    // 1. Identify if this is a guest user based on the prefix you defined in PostPresence.tsx
+    const isAnonymous = userId.startsWith("anon_");
 
-    const user = await authComponent.safeGetAuthUser(ctx);
+    // 2. Perform auth check ONLY if it's not an anonymous user
+    if (!isAnonymous) {
+      const user = await authComponent.safeGetAuthUser(ctx);
 
-    if(!user || user._id !== userId){
+      // If they claim to be a specific user ID but aren't logged in as them, block it.
+      if (!user || user._id !== userId) {
         throw new ConvexError("Unauthorized");
+      }
     }
 
+    // 3. Allow both authenticated and valid anonymous heartbeats to proceed
     return await presence.heartbeat(ctx, roomId, userId, sessionId, interval);
   },
 });
