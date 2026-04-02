@@ -3,11 +3,14 @@ import { ConvexError, v } from "convex/values";
 import { authComponent } from "./auth";
 import { Doc } from "./_generated/dataModel";
 
+
 export const createPost = mutation({
   args: { 
       title: v.string(), 
       body: v.string(), 
       imageStorageId: v.optional(v.id("_storage")),
+      headerImageUrl: v.optional(v.string()), // Added for external URLs
+      summary: v.optional(v.string()),        // Added for custom/AI summaries
       wordCount: v.number(),
       readTime: v.number()
   },
@@ -23,12 +26,13 @@ export const createPost = mutation({
         title: args.title,
         authorId: user._id,
         imageStorageId: args.imageStorageId,
+        headerImageUrl: args.headerImageUrl, 
+        summary: args.summary,               
         wordCount: args.wordCount,
         readTime: args.readTime,
     });
         return blogArticle;
     },
-
 });
 
 export const getPosts = query({

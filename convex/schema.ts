@@ -7,6 +7,8 @@ export default defineSchema({
         body: v.string(),
         authorId: v.string(),
         imageStorageId: v.optional(v.id("_storage")),
+        headerImageUrl: v.optional(v.string()), 
+        summary: v.optional(v.string()),        
         wordCount: v.optional(v.number()), 
         readTime: v.optional(v.number()),
     }).searchIndex('search_title',{
@@ -20,5 +22,4 @@ export default defineSchema({
         authorName: v.string(),
         body: v.string(),
     }),
-
 });
