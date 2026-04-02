@@ -12,8 +12,6 @@ import { ThemeToggle } from "./theme-toggle";
 import { SearchInput } from "./searchInput";
 import { cn } from "@/lib/utils";
 
-
-
 function MutexIcon() {
   const [isLocked, setIsLocked] = useState(true);
 
@@ -25,22 +23,17 @@ function MutexIcon() {
   }, []);
 
   return (
-    <div className="relative flex items-center justify-center w-8 h-8 bg-primary/10 rounded border border-primary/20">
+    <div className="relative flex items-center justify-center w-8 h-8 bg-primary/10 rounded border border-primary/20 shrink-0">
       {isLocked ? (
         <Lock className="size-4 text-primary animate-in zoom-in duration-300" />
       ) : (
         <Unlock className="size-4 text-primary animate-in zoom-in duration-300" />
       )}
-      {/* OS Style scanline effect */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-full w-full animate-pulse pointer-events-none" />
     </div>
   );
 }
 
-/**
- * Typewriter Component
- * Handles the linear synthesis of the brand name string.
- */
 function Typewriter({ text, speed = 100 }: { text: string; speed?: number }) {
   const [displayText, setDisplayText] = useState("");
   const [index, setIndex] = useState(0);
@@ -57,7 +50,6 @@ function Typewriter({ text, speed = 100 }: { text: string; speed?: number }) {
 
   return (
     <span className="font-mono">
-      {/* Prefix style like a terminal prompt */}
       <span className="text-muted-foreground mr-1">~</span>
       <span className="text-primary font-bold">$</span>{" "}
       {displayText.slice(0, 5)}
@@ -104,18 +96,19 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          {/* LEFT SIDE: Logo + Navigation Links */}
           <div className="flex items-center gap-6">
-            <Link href="/" className="shrink-0 flex items-center gap-3">
+            {/* FIXED LOGO CONTAINER: 
+                w-[180px] md:w-[240px] ensures the layout stays fixed while text types.
+                shrink-0 prevents the container itself from being squashed by nav links.
+            */}
+            <Link href="/" className="shrink-0 flex items-center gap-3 w-[180px] md:w-[240px] overflow-hidden">
               <MutexIcon />
-              <div className="text-xl md:text-2xl font-bold flex items-center">
+              <div className="text-xl md:text-2xl font-bold flex items-center shrink-0">
                 <Typewriter text="MutexBlog" />
-                {/* Blinking Caret */}
                 <span className="ml-1 w-2 h-6 bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary))] " />
               </div>
             </Link>
 
-            {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => (
                 <Link 
@@ -133,7 +126,6 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* RIGHT SIDE: Search + Auth + Theme */}
           <div className="hidden md:flex items-center gap-3">
             <SearchInput />
             
@@ -161,7 +153,6 @@ export function Navbar() {
             <ThemeToggle />
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
@@ -171,7 +162,7 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menu Dropdown ... (remains unchanged) */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t bg-background p-4 space-y-4 animate-in slide-in-from-top-2">
           <SearchInput />
