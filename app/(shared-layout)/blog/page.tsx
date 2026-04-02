@@ -1,104 +1,114 @@
-import Image from "next/image";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import Link  from "next/link";
+// app/blog/[postId]/page.tsx
 import { buttonVariants } from "@/components/ui/button";
-import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
-import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { connection } from "next/server";
-import { cacheLife, cacheTag } from "next/cache";
+import { Id } from "@/convex/_generated/dataModel";
+import { fetchQuery, preloadQuery } from "convex/nextjs";
+import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { Separator } from "@/components/ui/separator"
+import { CommentSection } from "@/components/web/commentSection";
+import { Metadata } from "next";
+import { PostPresence } from "@/components/web/PostPresence";
+import { getToken } from "@/lib/auth-server";
+
+// highlight.js dark theme for code blocks saved as HTML
+// Add this import in your global CSS instead if you prefer one import:
+//   @import 'highlight.js/styles/github-dark.css';
 
 
-// This page is rendered as static, so it can be cached by the CDN and served faster to users.
-// export const dynamic = "force-static";   
-
-// revalidate the page every 30 seconds, so that the content is updated without needing to redeploy the app.
-// export const revalidate = 30;
-
-export const metadata = {
-    title: "Next-Blog | Blog",
-    description: "Read our latest blogs and insights on various topics. Stay informed and inspired with our engaging content.", 
-};
-
-
-export default function blogPage() {
-    
-    // const data = useQuery(api.posts.getPosts);
-
-    
-
-    return (
-        <div className="py-12">
-            <div className="text-center pb-12">
-                <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Our Blogs</h1>
-                <p className="pt-4 max-w-2xl mx-auto text-xl text-muted-foreground">Insights, thoughts and ideas to embrace</p>
-            </div>
-            {/* // no suspense needed as we are caching */}
-            {/* <Suspense fallback={<SkeletonCard/>}> */}
-                <LoadBlogList/>
-            {/* </Suspense> */}
-        </div>
-    )
+interface PostIdRouteProps {
+    params: Promise<{
+        postId: Id<'posts'>;
+    }>;
 }
 
+export async function generateMetadata({ params }: PostIdRouteProps): Promise<Metadata> {
+    const { postId } = await params;
+    const post = await fetchQuery(api.posts.getPostById, { postId });
 
-export function SkeletonCard() {
-  return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(3)].map((_, index) => (
-            <div className="flex flex-col space-y-3" key={index}>
-                <Skeleton className="h-48 w-full rounded-xl" />
-                <div className="space-y-2 flex flex-col">
-                    <Skeleton className="h-6 w-3/4"/>
-                    <Skeleton className="h-4 w-full"/>
-                    <Skeleton className="h-4 w-2/4"/>
+    if (!post) {
+        return {
+            title: "Post not found",
+            description: "The post you are looking for does not exist.",
+        };
+    }
+
+    // Strip HTML tags for the meta description
+    const plainText = post.body.replace(/<[^>]*>/g, '').slice(0, 160);
+
+    return {
+        title: `Next-Blog | ${post.title}`,
+        description: plainText,
+    };
+}
+
+export default async function BlogPostPage({ params }: PostIdRouteProps) {
+    const { postId } = await params;
+    const token = await getToken();
+
+    const [post, preloadedComments, userID] = await Promise.all([
+        fetchQuery(api.posts.getPostById, { postId }),
+        preloadQuery(api.comments.getCommentsByPostId, { postId }),
+        fetchQuery(api.presence.getUserId, {}, { token }),
+    ]);
+
+    if (!post) {
+        return (
+            <div>
+                <h1 className="text-6xl font-extrabold p-20">No post found</h1>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-10xl mx-auto py-8 px-4 animate-in fade-in duration-500 relative">
+            <Link
+                href="/blog"
+                className={buttonVariants({ variant: "ghost", size: "sm", className: "mb-4" })}
+            >
+                <ArrowLeft />
+                back to blog page
+            </Link>
+
+            <div className="relative w-full h-100 mv-8 rounded-xl overflow-hidden shadow-sm">
+                <Image
+                    fill
+                    src={
+                        post.imageURL ??
+                        "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop"
+                    }
+                    className="object-cover hover:scale-105 transition-transform"
+                    alt={post.title}
+                />
+            </div>
+
+            <div className="space-y-4 flex flex-col">
+                <h1 className="text-4xl font-bold tracking-tight pt-10 text-foreground">
+                    {post.title}
+                </h1>
+                <div className="flex items-center justify-between w-full">
+                    <p className="text-sm text-muted-foreground">
+                        Posted on: {new Date(post._creationTime).toLocaleDateString()}
+                    </p>
+                    {userID && <PostPresence roomId={post._id} userID={userID} />}
                 </div>
             </div>
-        ))}
-    </div>
-  )
+
+            <Separator className="my-8" />
+
+            {/*
+                post.body is now raw HTML produced by Tiptap.
+                Render it directly — no markdown parsing needed, no plain-text output.
+                The hljs CSS imported above styles any <code class="language-*"> blocks.
+            */}
+            <article className="prose dark:prose-invert lg:prose-xl max-w-none px-2 sm:px-0">
+                <div dangerouslySetInnerHTML={{ __html: post.body }} />
+            </article>
+
+            <Separator className="my-8" />
+
+            <CommentSection preLoadedComments={preloadedComments} />
+        </div>
+    );
 }
-
-
-
-async function LoadBlogList(){
-    // await  connection();
-    "use cache"
-    cacheLife("hours");
-    cacheTag('blog');
-    const data = await fetchQuery(api.posts.getPosts);
-
-    return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {data?.map((item) => (
-                    <Card key={item._id} className="pt-0">
-                        <div className="relative h-48 w-full overflow-hidden">
-                            <Image
-                                src={item.imageURL ?? "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D/*  */"}
-                                fill
-                                alt="Blog image"
-                                className="rounded-t-lg object-cover"
-                            />
-                        </div>
-                        <CardContent>
-                            <Link href={`/blog/${item._id}`}>
-                                <h1 className="text-2xl font-bold hover:text-primary wrap-break-word">
-                                    {item.title}
-                                </h1>
-                            </Link>
-                            <p className="text-muted-foreground line-clamp-4">
-                                {item.body}
-                            </p>
-                        </CardContent>
-                        <CardFooter>
-                            <Link className={buttonVariants({className: "w-full",})}
-                            href={`/blog/${item._id}`}>
-                                Read more...
-                            </Link>
-                        </CardFooter>
-                    </Card>
-                ))}
-            </div>
-    )
-} 

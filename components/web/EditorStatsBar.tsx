@@ -1,35 +1,62 @@
 "use client"
 
 import { Editor } from '@tiptap/react'
-import { FileText, Hash, Image as ImageIcon, Video, Clock } from 'lucide-react'
+import { FileText, Hash, Image as ImageIcon, Clock, Code } from 'lucide-react'
 
-export function EditorStatsBar({ editor }: { editor: Editor | null }) {
+interface EditorStatsBarProps {
+    editor: Editor | null;
+}
+
+export function EditorStatsBar({ editor }: EditorStatsBarProps) {
     if (!editor) return null;
 
-    const stats = {
-        words: editor.storage.characterCount?.words() || editor.getText().split(/\s+/).filter(Boolean).length,
-        paragraphs: editor.getJSON().content?.filter(node => node.type === 'paragraph').length || 0,
-        media: editor.getJSON().content?.filter(node => ['image', 'youtube'].includes(node.type || '')).length || 0,
-        readTime: Math.ceil((editor.storage.characterCount?.words() || 0) / 225) || 1
-    };
+    const json = editor.getJSON();
+    const content = json.content || [];
+    
+    // Calculate word count
+    const text = editor.getText();
+    const words = text.split(/\s+/).filter(word => word.length > 0).length;
+    
+    // Calculate paragraph count
+    const paragraphs = content.filter(node => node.type === 'paragraph').length;
+    
+    // Calculate media count (images, videos, youtube)
+    const mediaCount = content.filter(node => 
+        ['image', 'youtube', 'customVideo', 'customAudio'].includes(node.type || '')
+    ).length;
+    
+    // Calculate code blocks
+    const codeBlocks = content.filter(node => node.type === 'codeBlock').length;
+    
+    // Calculate read time (average 225 words per minute)
+    const readTime = Math.max(1, Math.ceil(words / 225));
 
     return (
-        <div className="flex flex-wrap items-center gap-6 p-3 mb-4 border rounded-lg bg-muted/30 text-sm font-medium">
-            <div className="flex items-center gap-2">
-                <Hash className="size-4 text-primary" />
-                <span>{stats.words} Words</span>
+        <div className="flex flex-wrap items-center gap-4 p-3 border-b bg-muted/30 text-xs">
+            <div className="flex items-center gap-1.5">
+                <Hash className="size-3.5 text-muted-foreground" />
+                <span className="font-medium">{words}</span>
+                <span className="text-muted-foreground">words</span>
             </div>
-            <div className="flex items-center gap-2">
-                <FileText className="size-4 text-primary" />
-                <span>{stats.paragraphs} Paragraphs</span>
+            <div className="flex items-center gap-1.5">
+                <FileText className="size-3.5 text-muted-foreground" />
+                <span className="font-medium">{paragraphs}</span>
+                <span className="text-muted-foreground">paragraphs</span>
             </div>
-            <div className="flex items-center gap-2">
-                <ImageIcon className="size-4 text-primary" />
-                <span>{stats.media} Media Items</span>
+            <div className="flex items-center gap-1.5">
+                <ImageIcon className="size-3.5 text-muted-foreground" />
+                <span className="font-medium">{mediaCount}</span>
+                <span className="text-muted-foreground">media</span>
             </div>
-            <div className="flex items-center gap-2">
-                <Clock className="size-4 text-primary" />
-                <span>~{stats.readTime} min read</span>
+            <div className="flex items-center gap-1.5">
+                <Code className="size-3.5 text-muted-foreground" />
+                <span className="font-medium">{codeBlocks}</span>
+                <span className="text-muted-foreground">code blocks</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+                <Clock className="size-3.5 text-muted-foreground" />
+                <span className="font-medium">{readTime}</span>
+                <span className="text-muted-foreground">min read</span>
             </div>
         </div>
     );

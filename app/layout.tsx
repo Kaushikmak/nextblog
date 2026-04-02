@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ConvexClientProvider } from "@/components/web/ConvexClientProvider";
 import { Toaster } from "sonner";
+import 'highlight.js/styles/github-dark.css'
 
 
 const geistSans = Geist({
