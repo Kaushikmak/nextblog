@@ -71,15 +71,24 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
             {/* Title + meta */}
             <div className="space-y-4 mb-2">
                 <h1 className="text-4xl font-bold tracking-tight text-foreground">{post.title}</h1>
+                
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                        <p className="text-sm font-semibold text-foreground">
-                            By {post.authorName ?? "Anonymous"}
-                        </p>
+                    <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-4">
+                            <p className="text-sm font-semibold text-foreground">
+                                By {post.authorName ?? "Anonymous"}
+                            </p>
+                            
+                            {/* RESTORED: Presence Component */}
+                            <PostPresence roomId={post._id} userID={userID} />
+                        </div>
+                        
                         <p className="text-xs text-muted-foreground">
                             Posted on {new Date(post._creationTime).toLocaleDateString()}
                         </p>
                     </div>
+                    
+                    {/* Interactions Component */}
                     <PostInteractions 
                         postId={post._id} 
                         initialViews={post.views ?? 0} 

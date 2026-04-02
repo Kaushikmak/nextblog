@@ -23,23 +23,20 @@ export default async function BlogIndexPage() {
                         ? post.body.replace(/<[^>]*>?/gm, '').substring(0, 150) + "..." 
                         : "No content available.";
 
+                    const fallbackImage = "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop";
+                    const displayImage = post.imageURL || post.headerImageUrl || fallbackImage;
+
                     return (
                         <Link href={`/blog/${post._id}`} key={post._id}>
                             <Card className="hover:scale-[1.02] transition-transform duration-300 overflow-hidden shadow-sm h-full flex flex-col">
-                                {post.imageURL ? (
-                                    <div className="relative w-full h-48">
-                                        <Image
-                                            src={post.imageURL}
-                                            alt={post.title}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="relative w-full h-48 bg-secondary flex items-center justify-center">
-                                        <span className="text-muted-foreground">No image</span>
-                                    </div>
-                                )}
+                                <div className="relative w-full h-48 border-b">
+                                    <Image
+                                        src={displayImage} // Use the computed image here
+                                        alt={post.title}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
                                 <CardHeader>
                                     <CardTitle className="line-clamp-2">{post.title}</CardTitle>
                                 </CardHeader>
