@@ -29,6 +29,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "convex": "^1.32.0",
+    "highlight.js": "^11.11.1",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",

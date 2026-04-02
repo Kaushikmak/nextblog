@@ -17,6 +17,10 @@ import { EditorStatsBar } from './EditorStatsBar'
 import { EditorMenuBar } from './EditorMenuBar'
 import { Button } from '@/components/ui/button'
 import { FileCode2, Type } from 'lucide-react'
+import 'highlight.js/styles/atom-one-dark.css'
+
+// IMPORTANT: Re-import your custom media extensions
+import { VideoNode, AudioNode } from './media-extensions'
 
 const lowlight = createLowlight(common)
 
@@ -55,15 +59,20 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                 width: 640,
                 height: 480,
             }),
+            // BUG 1 FIX: Added styling attributes to the code block
             CodeBlockLowlight.configure({
                 lowlight,
+                HTMLAttributes: {
+                    class: 'block bg-zinc-950 text-zinc-50 rounded-lg p-4 font-mono text-sm my-4 overflow-x-auto',
+                },
             }),
+            // RESTORED MEDIA NODES
+            VideoNode,
+            AudioNode,
         ],
         content: content,
         immediatelyRender: false,
         onUpdate: ({ editor }) => {
-            // Only update parent if we are in Rich Text Mode
-            // Markdown mode handles updates manually to prevent cursor jumps
             if (!isMarkdownMode) {
                 onChange(editor.getHTML());
             }
@@ -75,7 +84,6 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         },
     });
 
-    // Sync external changes (like resets) to the editor, but only if not typing in Markdown mode
     useEffect(() => {
         if (editor && !isMarkdownMode && content !== editor.getHTML()) {
             editor.commands.setContent(content);
@@ -88,18 +96,12 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
 
     const toggleMode = () => {
         if (isMarkdownMode) {
-            // Switching TO Rich Text Mode
             editor.commands.setContent(markdownText);
             onChange(editor.getHTML());
             setIsMarkdownMode(false);
         } else {
-            // Switching TO Markdown Mode
-            // 1. Cast the entire storage object to allow any string key
             const storage = editor.storage as Record<string, any>;
-            
-            // 2. Now safely access markdown
             const md = storage.markdown.getMarkdown();
-            
             setMarkdownText(md);
             setIsMarkdownMode(true);
         }
@@ -108,8 +110,6 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     const handleMarkdownChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newMd = e.target.value;
         setMarkdownText(newMd);
-        
-        // Silently update the hidden Tiptap editor to trigger the live preview
         editor.commands.setContent(newMd);
         onChange(editor.getHTML());
     };
@@ -118,7 +118,6 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         <div className="flex flex-col w-full min-h-[600px] border rounded-xl bg-background shadow-sm overflow-hidden">
             <EditorStatsBar editor={editor} />
             
-            {/* Mode Toggle Bar */}
             <div className="flex justify-between items-center border-b px-4 py-2 bg-muted/30">
                 <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                     {isMarkdownMode ? "Source Editor" : "Visual Editor"}
@@ -129,7 +128,6 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                 </Button>
             </div>
 
-            {/* Formatting Toolbar (Hidden in Markdown Mode) */}
             {!isMarkdownMode && <EditorMenuBar editor={editor} />}
             
             <div className="flex-1 relative">

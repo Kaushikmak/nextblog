@@ -16,6 +16,8 @@ import { toast } from 'sonner'
 import { Id } from '@/convex/_generated/dataModel'
 
 export function EditorMenuBar({ editor }: { editor: Editor | null }) {
+    const [isLinkOpen, setIsLinkOpen] = useState(false);
+    const [linkUrl, setLinkUrl] = useState("");
     const [isImageOpen, setIsImageOpen] = useState(false);
     const [isYoutubeOpen, setIsYoutubeOpen] = useState(false);
     const [isVideoOpen, setIsVideoOpen] = useState(false);
@@ -29,13 +31,14 @@ export function EditorMenuBar({ editor }: { editor: Editor | null }) {
 
     if (!editor) return null;
 
-    const setLink = () => {
-        const url = window.prompt('Enter URL');
-        if (url) {
-            editor.chain().focus().setLink({ href: url }).run();
+    const handleLinkSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (linkUrl) {
+            editor.chain().focus().setLink({ href: linkUrl }).run();
+            setLinkUrl("");
+            setIsLinkOpen(false);
         }
     };
-
     // Generic upload handler for Image, Video, and Audio
     const handleConvexUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'audio') => {
         const file = e.target.files?.[0];
@@ -152,9 +155,20 @@ export function EditorMenuBar({ editor }: { editor: Editor | null }) {
             <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
                 <Code className="size-4" />
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={setLink}>
-                <LinkIcon className="size-4" />
-            </Button>
+            <Dialog open={isLinkOpen} onOpenChange={setIsLinkOpen}>
+                <DialogTrigger asChild>
+                    <Button type="button" variant="ghost" size="sm" title="Insert Link">
+                        <LinkIcon className="size-4" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Insert Hyperlink</DialogTitle></DialogHeader>
+                    <form onSubmit={handleLinkSubmit} className="space-y-4 py-4 flex gap-2">
+                        <Input placeholder="https://example.com" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+                        <Button type="submit">Add Link</Button>
+                    </form>
+                </DialogContent>
+            </Dialog>
             <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
                 <Minus className="size-4" />
             </Button>
