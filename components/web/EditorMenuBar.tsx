@@ -28,11 +28,13 @@ export function EditorMenuBar({ editor }: { editor: Editor | null }) {
 
     return (
         <div className="flex flex-wrap gap-1 p-2 border-b bg-background sticky top-0 z-10">
+            {/* ADDED type="button" TO ALL BUTTONS */}
+            
             {/* Text Formatting */}
-            <Button variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleBold().run()} className={editor.isActive('bold') ? 'bg-muted' : ''}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleBold().run()} className={editor.isActive('bold') ? 'bg-muted' : ''}>
                 <Bold className="size-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleItalic().run()} className={editor.isActive('italic') ? 'bg-muted' : ''}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleItalic().run()} className={editor.isActive('italic') ? 'bg-muted' : ''}>
                 <Italic className="size-4" />
             </Button>
             
@@ -48,13 +50,13 @@ export function EditorMenuBar({ editor }: { editor: Editor | null }) {
             </select>
 
             {/* Alignment */}
-            <Button variant="ghost" size="sm" onClick={() => editor.chain().focus().setTextAlign('left').run()}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().setTextAlign('left').run()}>
                 <AlignLeft className="size-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => editor.chain().focus().setTextAlign('center').run()}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().setTextAlign('center').run()}>
                 <AlignCenter className="size-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => editor.chain().focus().setTextAlign('right').run()}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().setTextAlign('right').run()}>
                 <AlignRight className="size-4" />
             </Button>
 
@@ -69,19 +71,19 @@ export function EditorMenuBar({ editor }: { editor: Editor | null }) {
             </div>
 
             {/* Special Features */}
-            <Button variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().toggleCodeBlock().run()}>
                 <Code className="size-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={addImage}>
+            <Button type="button" variant="ghost" size="sm" onClick={addImage}>
                 <ImageIcon className="size-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={addYoutube}>
+            <Button type="button" variant="ghost" size="sm" onClick={addYoutube}>
                 <Youtube className="size-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={setLink}>
+            <Button type="button" variant="ghost" size="sm" onClick={setLink}>
                 <LinkIcon className="size-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+            <Button type="button" variant="ghost" size="sm" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
                 <Minus className="size-4" />
             </Button>
         </div>
