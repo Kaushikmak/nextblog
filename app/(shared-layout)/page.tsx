@@ -3,6 +3,61 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowRight, Code2, BookOpen, Users } from "lucide-react";
 import Link from "next/link";
 import { GridLineBackground } from "@/components/web/Gridlinebackground";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: {
+    default: "MutexBlog",
+    template: "%s | MutexBlog",
+  },
+  description: "A high-performance technical blogging platform featuring real-time synchronization and a sophisticated rich-text editing environment for engineers.",
+  authors: [{ name: "tastytaco", url: "https://nextblog-ov87.vercel.app" }],
+  creator: "tastytaco",
+  publisher: "MutexBlog",
+
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://nextblog-ov87.vercel.app",
+    siteName: "MutexBlog",
+    title: "MutexBlog | Atomic Updates for Engineers",
+    description: "Experience a seamless technical writing environment with real-time collaborative features and a modern developer-centric interface.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "MutexBlog - Real-time Tech Blogging Platform",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "MutexBlog",
+    description: "Atomic Updates for Engineers - Bridging the gap between code and content.",
+    creator: "@KmaK69837720",
+    images: ["/og-image.png"],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  // verification: {
+  //   google: "your-google-verification-code",
+  // },
+  
+  category: "technology",
+};
 
 export default function Home() {
   return (
