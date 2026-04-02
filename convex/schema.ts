@@ -31,4 +31,12 @@ export default defineSchema({
         authorName: v.string(),
         body: v.string(),
     }),
+
+    profiles: defineTable({
+        userId: v.string(),
+        phone: v.optional(v.string()),
+        bio: v.optional(v.string()),
+        website: v.optional(v.string()),
+        location: v.optional(v.string()),
+    }).index("by_userId", ["userId"]),
 });
