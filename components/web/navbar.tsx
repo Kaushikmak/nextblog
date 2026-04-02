@@ -19,17 +19,17 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Define public links
-  const baseLinks = [
+  // Primary navigation links next to logo
+  const mainLinks = [
     { name: "Home", href: "/" },
     { name: "Blog", href: "/blog" },
     { name: "Authors", href: "/authors" },
   ];
 
-  // Conditionally add the Create link only if authenticated
+  // Conditional link for authenticated users
   const navLinks = isAuthenticated 
-    ? [...baseLinks, { name: "Create", href: "/create" }] 
-    : baseLinks;
+    ? [...mainLinks, { name: "Create", href: "/create" }] 
+    : mainLinks;
 
   const handleSignOut = () => {
     authClient.signOut({
@@ -51,24 +51,24 @@ export function Navbar() {
     <nav className="border-b bg-background sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Brand Logo */}
-          <div className="flex items-center">
-            <Link href="/">
+          
+          {/* LEFT SIDE: Logo + Navigation Links */}
+          <div className="flex items-center gap-8">
+            <Link href="/" className="shrink-0">
               <h1 className="text-3xl font-bold">
                 Next<span className="text-primary">Blog</span>
               </h1>
             </Link>
-          </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
-            <div className="flex space-x-2">
+            {/* Desktop Navigation Links */}
+            <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => (
                 <Link 
                   key={link.name} 
                   className={cn(
                     buttonVariants({ variant: "ghost" }),
-                    pathname === link.href && "bg-muted text-primary"
+                    pathname === link.href && "bg-muted text-primary",
+                    "text-sm font-medium"
                   )} 
                   href={link.href}
                 >
@@ -76,6 +76,10 @@ export function Navbar() {
                 </Link>
               ))}
             </div>
+          </div>
+
+          {/* RIGHT SIDE: Search + Auth + Theme */}
+          <div className="hidden md:flex items-center gap-3">
             <SearchInput />
             
             {!isLoading && (
@@ -102,7 +106,7 @@ export function Navbar() {
             <ThemeToggle />
           </div>
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
@@ -138,11 +142,7 @@ export function Navbar() {
                 <>
                   <Link 
                     href="/dashboard" 
-                    className={cn(
-                        buttonVariants({ variant: "outline" }), 
-                        "justify-start",
-                        pathname === "/dashboard" && "border-primary text-primary"
-                    )}
+                    className={cn(buttonVariants({ variant: "outline" }), "justify-start")}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {session?.user?.name || "Dashboard"}
