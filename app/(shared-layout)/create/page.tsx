@@ -1,6 +1,6 @@
 "use client"
 
-import dynamic from "next/dynamic";
+import TiptapEditor from "@/components/web/TiptapEditor";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,16 +10,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PostContent } from "@/components/web/Postcontent";
 import { buildStandaloneHtml } from "@/lib/Downloadhtml";
-
-const TiptapEditor = dynamic(() => import("@/components/web/TiptapEditor"), {
-    ssr: false,
-    loading: () => (
-        <div className="flex flex-col w-full min-h-[500px] border rounded-xl bg-muted/10 animate-pulse p-4">
-            <div className="h-10 bg-muted rounded-md mb-4 w-full" />
-            <div className="flex-1 bg-muted rounded-md w-full" />
-        </div>
-    ),
-});
 
 export default function CreatePostPage() {
     const [isPending, setIsPending] = useState(false);
@@ -42,7 +32,6 @@ export default function CreatePostPage() {
     };
 
     const handleDownloadHtml = () => {
-        // Build a full standalone HTML document with styles + hljs CDN
         const fullHtml = buildStandaloneHtml(title, content);
         const blob = new Blob([fullHtml], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
@@ -101,7 +90,6 @@ export default function CreatePostPage() {
                     </Card>
                 </div>
 
-                {/* Live Preview — same PostContent component as the blog page */}
                 <div className="hidden lg:block">
                     <div className="sticky top-8 space-y-4">
                         <div className="flex items-center gap-2 text-muted-foreground mb-2">
