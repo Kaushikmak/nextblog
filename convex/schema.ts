@@ -39,4 +39,11 @@ export default defineSchema({
         website: v.optional(v.string()),
         location: v.optional(v.string()),
     }).index("by_userId", ["userId"]),
+
+    follows: defineTable({
+        followerId: v.string(),
+        followingId: v.string(),
+    }).index("by_follower", ["followerId"])
+      .index("by_following", ["followingId"])
+      .index("by_follower_following", ["followerId", "followingId"]),
 });
