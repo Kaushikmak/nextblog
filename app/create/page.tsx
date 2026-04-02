@@ -16,6 +16,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import Link from "next/link";
+import { Navbar } from "@/components/web/navbar";
 
 export default function CreatePostPage() {
     const [isPending, setIsPending] = useState(false);
@@ -33,12 +34,13 @@ export default function CreatePostPage() {
     const createPost = useMutation(api.posts.createPost);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Derived state for the live preview image
+    // Fallback image logic
+    const defaultImage = "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop";
     const previewImageUrl = activeMediaTab === "upload" && selectedFile 
         ? URL.createObjectURL(selectedFile) 
-        : activeMediaTab === "url" && externalUrl 
+        : activeMediaTab === "url" && externalUrl.trim() !== ""
             ? externalUrl 
-            : null;
+            : defaultImage;
 
     async function onSubmit() {
         if (!title.trim()) { toast.error("Please enter a title"); return; }
@@ -78,7 +80,6 @@ export default function CreatePostPage() {
             });
 
             toast.success("Blog published successfully!");
-            // LLM predicts USER may want to redirect to /blog here using useRouter()
         } catch (error) {
             toast.error("Failed to publish post.");
             console.error(error);
@@ -109,15 +110,21 @@ export default function CreatePostPage() {
     };
 
     return (
-        // Absolute full viewport height because this file is now outside the Navbar layout
-        <div className="w-screen h-screen flex flex-col overflow-hidden bg-background">
+        // Changed to w-full to prevent horizontal scrollbars
+        <div className="w-full h-screen flex flex-col overflow-hidden bg-background">
             
+            {/* Navbar explicitly imported to avoid layout constraints */}
+            <div className="shrink-0">
+                <Navbar />
+            </div>
+
+            {/* Toolbar */}
             <div className="flex justify-between items-center p-4 border-b shrink-0 bg-muted/20">
                 <div className="flex items-center gap-4">
                     <Link href="/blog">
                         <Button variant="ghost" size="icon"><ArrowLeft className="size-4" /></Button>
                     </Link>
-                    <h1 className="text-xl font-bold tracking-tight">Post Editor</h1>
+                    <h1 className="text-xl font-bold tracking-tight"></h1>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={handleCopyHtml}>
@@ -135,90 +142,93 @@ export default function CreatePostPage() {
                 </div>
             </div>
 
-            <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
-                
-                <ResizablePanel defaultSize={50} minSize={30} className="flex flex-col bg-background p-6 overflow-y-auto border-r">
-                    <div className="space-y-6 mb-6 max-w-3xl mx-auto w-full">
-                        
-                        <div className="space-y-2">
-                            <Label htmlFor="title" className="text-lg font-semibold">Post Title</Label>
-                            <Input
-                                id="title"
-                                className="text-lg h-12 font-medium"
-                                placeholder="Enter a catchy title..."
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                            />
-                        </div>
+            {/* Top Metadata Section (Full Width) */}
+            <div className="shrink-0 border-b bg-background p-4 shadow-sm z-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+                    <div className="space-y-2">
+                        <Label htmlFor="title" className="text-sm font-semibold">Post Title</Label>
+                        <Input
+                            id="title"
+                            className="font-medium bg-muted/50"
+                            placeholder="Enter a catchy title..."
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                        />
+                    </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="summary" className="text-sm font-semibold">Summary (Optional)</Label>
-                            <Textarea
-                                id="summary"
-                                className="resize-none"
-                                placeholder="Write a short summary... (AI generation can be copy-pasted here)"
-                                value={summary}
-                                onChange={(e) => setSummary(e.target.value)}
-                                rows={2}
-                            />
-                        </div>
-                        
-                        <div className="space-y-2 border rounded-lg p-4 bg-muted/10">
-                            <Label className="text-sm font-semibold mb-2 block">Header Image</Label>
-                            <Tabs value={activeMediaTab} onValueChange={setActiveMediaTab} className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 mb-4">
-                                    <TabsTrigger value="upload">Upload File</TabsTrigger>
-                                    <TabsTrigger value="url">External URL</TabsTrigger>
-                                </TabsList>
-                                <TabsContent value="upload" className="flex items-center gap-4">
-                                    <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>
-                                        <ImageIcon className="size-4 mr-2" />
-                                        {selectedFile ? "Change Image" : "Select Image"}
-                                    </Button>
-                                    <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                                        {selectedFile ? selectedFile.name : "No file chosen"}
-                                    </span>
-                                    <input 
-                                        type="file" 
-                                        accept="image/*"
-                                        className="hidden" 
-                                        ref={fileInputRef}
-                                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                                    />
-                                </TabsContent>
-                                <TabsContent value="url">
-                                    <div className="flex items-center gap-2">
-                                        <LinkIcon className="size-4 text-muted-foreground" />
-                                        <Input 
-                                            placeholder="https://images.unsplash.com/..." 
-                                            value={externalUrl}
-                                            onChange={(e) => setExternalUrl(e.target.value)}
-                                        />
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
-                        </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="summary" className="text-sm font-semibold">Summary (Optional)</Label>
+                        <Textarea
+                            id="summary"
+                            className="resize-none h-[40px] min-h-[40px] bg-muted/50"
+                            placeholder="Write a short summary..."
+                            value={summary}
+                            onChange={(e) => setSummary(e.target.value)}
+                        />
                     </div>
                     
-                    <div className="flex-1 flex flex-col min-h-[600px] max-w-3xl mx-auto w-full">
-                        <Label className="text-sm font-semibold mb-2">Content</Label>
+                    <div className="space-y-2">
+                        <Label className="text-sm font-semibold">Header Image</Label>
+                        <Tabs value={activeMediaTab} onValueChange={setActiveMediaTab} className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 mb-2 h-9">
+                                <TabsTrigger value="upload" className="text-xs">Upload File</TabsTrigger>
+                                <TabsTrigger value="url" className="text-xs">External URL</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="upload" className="flex items-center gap-3 mt-0">
+                                <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
+                                    <ImageIcon className="size-3 mr-2" />
+                                    {selectedFile ? "Change" : "Select"}
+                                </Button>
+                                <span className="text-xs text-muted-foreground truncate flex-1">
+                                    {selectedFile ? selectedFile.name : "No file chosen"}
+                                </span>
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    className="hidden" 
+                                    ref={fileInputRef}
+                                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                />
+                            </TabsContent>
+                            <TabsContent value="url" className="mt-0">
+                                <div className="flex items-center gap-2">
+                                    <LinkIcon className="size-4 text-muted-foreground" />
+                                    <Input 
+                                        className="h-9 text-sm bg-muted/50"
+                                        placeholder="https://images.unsplash.com/..." 
+                                        value={externalUrl}
+                                        onChange={(e) => setExternalUrl(e.target.value)}
+                                    />
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+                    </div>
+                </div>
+            </div>
+
+            {/* Resizable Editor & Preview */}
+            <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
+                
+                <ResizablePanel defaultSize={50} minSize={30} className="flex flex-col bg-background overflow-hidden border-r">
+                    <div className="bg-muted/30 border-b px-4 py-2 shrink-0">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Editor</span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4">
                         <TiptapEditor content={content} onChange={setContent} />
                     </div>
                 </ResizablePanel>
 
                 <ResizableHandle withHandle />
 
-                <ResizablePanel defaultSize={50} minSize={30} className="bg-[#f8f9fa] dark:bg-zinc-950 p-0 overflow-y-auto hidden md:block">
-                    <div className="sticky top-0 z-10 flex items-center justify-between p-2 bg-background/80 backdrop-blur-sm border-b">
-                        <div className="flex items-center gap-2 text-muted-foreground px-4">
-                            <Eye className="size-4" />
-                            <span className="text-xs font-bold uppercase tracking-wider">Live Preview</span>
-                        </div>
+                <ResizablePanel defaultSize={50} minSize={30} className="bg-[#f8f9fa] dark:bg-zinc-950 flex flex-col overflow-hidden hidden md:flex">
+                    <div className="bg-background/80 backdrop-blur-sm border-b px-4 py-2 shrink-0 flex items-center gap-2">
+                        <Eye className="size-4 text-muted-foreground" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live Preview</span>
                     </div>
                     
-                    <div className="p-8 max-w-4xl mx-auto min-h-full">
-                        {previewImageUrl && (
-                            <div className="w-full h-[40vh] relative mb-8 rounded-xl overflow-hidden shadow-md bg-muted">
+                    <div className="flex-1 overflow-y-auto p-8">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="w-full h-[35vh] relative mb-8 rounded-xl overflow-hidden shadow-md bg-muted border">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img 
                                     src={previewImageUrl} 
@@ -226,20 +236,23 @@ export default function CreatePostPage() {
                                     className="w-full h-full object-cover"
                                 />
                             </div>
-                        )}
-                        <h1 className="text-5xl font-extrabold mb-4 tracking-tight">
-                            {title || "Your Title Here"}
-                        </h1>
-                        {summary && (
-                            <p className="text-xl text-muted-foreground mb-8 border-l-4 border-primary pl-4 italic">
-                                {summary}
-                            </p>
-                        )}
-                        <div className="prose dark:prose-invert max-w-none mt-8">
-                            {content
-                                ? <PostContent html={content} />
-                                : <p className="text-muted-foreground italic">Start typing to see the magic happen...</p>
-                            }
+                            
+                            <h1 className="text-5xl font-extrabold mb-4 tracking-tight break-words">
+                                {title || "Your Title Here"}
+                            </h1>
+                            
+                            {summary && (
+                                <p className="text-xl text-muted-foreground mb-8 border-l-4 border-primary pl-4 italic break-words">
+                                    {summary}
+                                </p>
+                            )}
+                            
+                            <div className="prose dark:prose-invert max-w-none mt-8 break-words">
+                                {content
+                                    ? <PostContent html={content} />
+                                    : <p className="text-muted-foreground italic">Start typing to see the magic happen...</p>
+                                }
+                            </div>
                         </div>
                     </div>
                 </ResizablePanel>
