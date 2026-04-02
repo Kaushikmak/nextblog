@@ -1,16 +1,70 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useConvexAuth } from "convex/react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Lock, Unlock } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "../ui/button";
 import { ThemeToggle } from "./theme-toggle";
 import { SearchInput } from "./searchInput";
 import { cn } from "@/lib/utils";
+
+
+
+function MutexIcon() {
+  const [isLocked, setIsLocked] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsLocked((prev) => !prev);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="relative flex items-center justify-center w-8 h-8 bg-primary/10 rounded border border-primary/20">
+      {isLocked ? (
+        <Lock className="size-4 text-primary animate-in zoom-in duration-300" />
+      ) : (
+        <Unlock className="size-4 text-primary animate-in zoom-in duration-300" />
+      )}
+      {/* OS Style scanline effect */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-full w-full animate-pulse pointer-events-none" />
+    </div>
+  );
+}
+
+/**
+ * Typewriter Component
+ * Handles the linear synthesis of the brand name string.
+ */
+function Typewriter({ text, speed = 100 }: { text: string; speed?: number }) {
+  const [displayText, setDisplayText] = useState("");
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (index < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText((prev) => prev + text[index]);
+        setIndex((prev) => prev + 1);
+      }, speed);
+      return () => clearTimeout(timeout);
+    }
+  }, [index, text, speed]);
+
+  return (
+    <span className="font-mono">
+      {/* Prefix style like a terminal prompt */}
+      <span className="text-muted-foreground mr-1">~</span>
+      <span className="text-primary font-bold">$</span>{" "}
+      {displayText.slice(0, 5)}
+      <span className="text-primary">{displayText.slice(5)}</span>
+    </span>
+  );
+}
 
 export function Navbar() {
   const { isAuthenticated, isLoading } = useConvexAuth();
@@ -19,14 +73,12 @@ export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Primary navigation links next to logo
   const mainLinks = [
     { name: "Home", href: "/" },
     { name: "Blog", href: "/blog" },
     { name: "Authors", href: "/authors" },
   ];
 
-  // Conditional link for authenticated users
   const navLinks = isAuthenticated 
     ? [...mainLinks, { name: "Create", href: "/create" }] 
     : mainLinks;
@@ -53,11 +105,14 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           
           {/* LEFT SIDE: Logo + Navigation Links */}
-          <div className="flex items-center gap-8">
-            <Link href="/" className="shrink-0">
-              <h1 className="text-3xl font-bold">
-                Next<span className="text-primary">Blog</span>
-              </h1>
+          <div className="flex items-center gap-6">
+            <Link href="/" className="shrink-0 flex items-center gap-3">
+              <MutexIcon />
+              <div className="text-xl md:text-2xl font-bold flex items-center">
+                <Typewriter text="MutexBlog" />
+                {/* Blinking Caret */}
+                <span className="ml-1 w-2 h-6 bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary))] " />
+              </div>
             </Link>
 
             {/* Desktop Navigation Links */}
