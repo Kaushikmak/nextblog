@@ -18,9 +18,6 @@ import { FileCode2, Type } from 'lucide-react'
 import CodeBlock from '@tiptap/extension-code-block'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import CodeBlockComponent from './CodeBlockComponent'
-
-
-// IMPORTANT: Re-import your custom media extensions
 import { VideoNode, AudioNode } from './media-extensions'
 
 
@@ -90,7 +87,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     }, [content, editor, isMarkdownMode]);
 
     if (!editor) {
-        return <div className="min-h-[500px] border rounded-xl bg-muted/10 animate-pulse" />;
+        return <div className="min-h-125 border rounded-xl bg-muted/10 animate-pulse" />;
     }
 
     const toggleMode = () => {
@@ -114,7 +111,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     };
 
     return (
-        <div className="flex flex-col w-full min-h-[600px] border rounded-xl bg-background shadow-sm overflow-hidden">
+        <div className="flex flex-col w-full min-h-150 border rounded-xl bg-background shadow-sm overflow-hidden">
             <EditorStatsBar editor={editor} />
             
             <div className="flex justify-between items-center border-b px-4 py-2 bg-muted/30">

@@ -10,6 +10,7 @@ import { CommentSection } from "@/components/web/commentSection";
 import { Metadata } from "next";
 import { PostPresence } from "@/components/web/PostPresence";
 import { getToken } from "@/lib/auth-server";
+import { marked } from "marked";
 
 interface PostIdRouteProps{
     params: Promise<{
@@ -89,7 +90,7 @@ export default async function BlogPostPage({params}: PostIdRouteProps){
                 <Separator className="my-8"/>
 
                     <article className="prose dark:prose-invert lg:prose-xl max-w-none px-2 sm:px-0">
-                        <div dangerouslySetInnerHTML={{ __html: post.body }} />
+                        <div dangerouslySetInnerHTML={{ __html: marked(post.body) }} />
                     </article>
 
                 <Separator className="my-8" />

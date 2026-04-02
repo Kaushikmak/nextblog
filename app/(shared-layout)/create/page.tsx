@@ -14,12 +14,13 @@ import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+import { marked } from "marked";
 
 
 const TiptapEditor = dynamic(() => import("@/components/web/TiptapEditor"), {
     ssr: false,
     loading: () => (
-        <div className="flex flex-col w-full min-h-[600px] border rounded-xl bg-muted/10 animate-pulse p-4">
+        <div className="flex flex-col w-full min-h-150 border rounded-xl bg-muted/10 animate-pulse p-4">
             <div className="h-10 bg-muted rounded-md mb-4 w-full"></div>
             <div className="flex-1 bg-muted rounded-md w-full"></div>
         </div>
@@ -59,7 +60,7 @@ export default function CreatePostPage() {
     }
 
     return (
-        <div className="max-w-[1600px] mx-auto py-8 px-4">
+        <div className="max-w-400 mx-auto py-8 px-4">
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Create New Post</h1>
@@ -112,10 +113,10 @@ export default function CreatePostPage() {
                             <Eye className="size-4" />
                             <span className="text-sm font-medium uppercase tracking-wider">Live Preview</span>
                         </div>
-                        <Card className="min-h-[800px] bg-muted/10 overflow-hidden">
+                        <Card className="min-h-200 bg-muted/10 overflow-hidden">
                             <CardContent className="p-8 prose dark:prose-invert max-w-none">
                                 <h1 className="not-prose text-4xl font-extrabold mb-8">{watchTitle || "Your Title Here"}</h1>
-                                <div dangerouslySetInnerHTML={{ __html: watchContent || "<p className='text-muted-foreground italic'>Start typing to see the magic happen...</p>" }} />
+                                <div dangerouslySetInnerHTML={{ __html: marked(watchContent || "<p className='text-muted-foreground italic'>Start typing to see the magic happen...</p>") }} />
                             </CardContent>
                         </Card>
                     </div>
