@@ -12,13 +12,8 @@ import { SearchInput } from "./searchInput";
 
 // components can have standard exports, but they must be React components
 export function Navbar() {
-  const { isAuthenticated, isLoading } = useConvexAuth();
-  
-  // Fetch session data to access the username (requires Better Auth's React client)
-  const { data: session } = authClient.useSession(); 
-  
+  const {isAuthenticated, isLoading} = useConvexAuth();
   const router = useRouter();
-
   return (
     <nav className="flex w-full py-5 items-center justify-between">
       <div className="flex items-center gap-8">
@@ -30,9 +25,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
             <Link className={buttonVariants({variant: "ghost"})} href="/">Home</Link>
             <Link className={buttonVariants({variant: "ghost"})} href="/blog">Blog</Link>
-            <Link className={buttonVariants({variant: "ghost"})} href="/authors">Authors</Link>
             <Link className={buttonVariants({variant: "ghost"})} href="/create">Create</Link>
-            
         </div>
       </div>
 
@@ -40,28 +33,18 @@ export function Navbar() {
         <div className="hidden md:block mr-2">
           <SearchInput />
         </div>
-        
         { isLoading ? null : isAuthenticated ? (
-          <>
-            <Link 
-              className={buttonVariants({ variant: "outline" })} 
-              href="/dashboard"
-            >
-              {session?.user?.name || "Dashboard"}
-            </Link>
-            
-            <Button onClick={() => authClient.signOut({
-              fetchOptions: {
-                onSuccess: () => {
-                  toast.success("Logged out successfully");
-                  router.push("/");
-                },
-                onError: (error) => {
-                  toast.error(error.error.message);
-                }
+          <Button onClick={() => authClient.signOut({
+            fetchOptions: {
+              onSuccess: () => {
+                toast.success("Logged out successfully");
+                router.push("/");
+              },
+              onError: (error) => {
+                toast.error(error.error.message);
               }
-            })}>Log out</Button>
-          </>
+            }
+          })}>Log out</Button>
         ) : (
         <>
           <Link className={buttonVariants()} href="/auth/signup">Sign up</Link>
