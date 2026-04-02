@@ -1,6 +1,7 @@
 "use client"
 
 import { useEditor, EditorContent } from '@tiptap/react'
+import { marked } from "marked";
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Youtube from '@tiptap/extension-youtube'
@@ -34,6 +35,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         extensions: [
             StarterKit.configure({
                 codeBlock: false, 
+                link: false,
             }),
             Markdown,
             TextStyle,
@@ -84,8 +86,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
 
     useEffect(() => {
         if (editor && !isMarkdownMode && content !== editor.getHTML()) {
-            const storage = editor.storage as any;
-            editor.commands.setContent(storage.markdown.parse(content));
+            editor.commands.setContent(marked(content || ""));
         }
     }, [content, editor, isMarkdownMode]);
 
@@ -95,7 +96,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
 
     const toggleMode = () => {
         if (isMarkdownMode) {
-            editor.commands.setContent(markdownText);
+            editor.commands.setContent(marked(markdownText));
             const storage = editor.storage as any;
             const md = storage.markdown.getMarkdown();
             onChange(md);
@@ -111,7 +112,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     const handleMarkdownChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newMd = e.target.value;
         setMarkdownText(newMd);
-        editor.commands.setContent(newMd);
+        editor.commands.setContent(marked(newMd));
         const storage = editor.storage as any;
         const md = storage.markdown.getMarkdown();
         onChange(md);
