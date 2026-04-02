@@ -19,17 +19,55 @@ interface PostIdRouteProps {
 }
 
 export async function generateMetadata({ params }: PostIdRouteProps): Promise<Metadata> {
-    const { postId } = await params;
-    const post = await fetchQuery(api.posts.getPostById, { postId });
+    const { postId } = await params; //
+    const post = await fetchQuery(api.posts.getPostById, { postId }); //
 
-    if (!post) return { title: "Post not found", description: "The post you are looking for does not exist." };
+    if (!post) {
+        return { 
+            title: "Post Not Found", 
+            description: "The requested technical discourse is unavailable." 
+        };
+    }
 
-    // Strip HTML tags for plain-text meta description
-    const plain = post.body.replace(/<[^>]*>/g, '').slice(0, 160);
+    // Strip HTML for a clean search engine snippet
+    const plainDescription = post.body
+        .replace(/<[^>]*>/g, '')
+        .slice(0, 160)
+        .trim();
+
+    const siteTitle = "MutexBlog";
+    const postImage = post.imageURL || "/og-image.png"; // Fallback to site default
 
     return {
-        title: `Next-Blog | ${post.title}`,
-        description: plain,
+        title: post.title, // Becomes "Post Title | MutexBlog" via layout template
+        description: plainDescription, //
+        
+        // Open Graph for LinkedIn, Discord, and Facebook
+        openGraph: {
+            title: post.title,
+            description: plainDescription,
+            type: "article",
+            url: `https://nextblog-ov87.vercel.app/blog/${postId}`,
+            publishedTime: new Date(post._creationTime).toISOString(), //
+            authors: [post.authorName ?? "Anonymous"], //
+            images: [
+                {
+                    url: postImage,
+                    width: 1200,
+                    height: 630,
+                    alt: post.title,
+                },
+            ],
+        },
+
+        // Twitter/X Card Metadata
+        twitter: {
+            card: "summary_large_image",
+            title: post.title,
+            description: plainDescription,
+            creator: "@KmaK69837720", //
+            images: [postImage],
+        },
     };
 }
 

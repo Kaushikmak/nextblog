@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     default: "MutexBlog",
     template: "%s | MutexBlog",
   },
-  description: "A high-performance technical blogging platform featuring real-time synchronization and a sophisticated rich-text editing environment for engineers.",
+  description: "A specialized platform for technical discourse, focusing on core computer science, discrete mathematics, and advanced engineering principles.",
   authors: [{ name: "tastytaco", url: "https://nextblog-ov87.vercel.app" }],
   creator: "tastytaco",
   publisher: "MutexBlog",

@@ -9,6 +9,18 @@ import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { fetchQuery } from "convex/nextjs";
+import { Metadata } from "next";
+
+export async function generateMetadata({ params }: AuthorProfileProps): Promise<Metadata> {
+    const { authorId } = await params;
+    const authorData = await fetchQuery(api.authors.getAuthorProfile, { authorId });
+    if (!authorData) return { title: "Author Not Found" };
+    return {
+        title: authorData.fallbackName,
+        description: authorData.profile?.bio || `Read posts by ${authorData.fallbackName} on MutexBlog.`,
+    };
+}
 
 interface AuthorProfileProps {
     params: Promise<{ authorId: string }>;
