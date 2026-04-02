@@ -9,8 +9,8 @@ export const createPost = mutation({
       title: v.string(), 
       body: v.string(), 
       imageStorageId: v.optional(v.id("_storage")),
-      headerImageUrl: v.optional(v.string()), // Added for external URLs
-      summary: v.optional(v.string()),        // Added for custom/AI summaries
+      headerImageUrl: v.optional(v.string()),
+      summary: v.optional(v.string()),
       wordCount: v.number(),
       readTime: v.number()
   },
@@ -25,11 +25,14 @@ export const createPost = mutation({
         body: args.body,
         title: args.title,
         authorId: user._id,
+        authorName: user.name ?? "Anonymous Author",
         imageStorageId: args.imageStorageId,
         headerImageUrl: args.headerImageUrl, 
         summary: args.summary,               
         wordCount: args.wordCount,
         readTime: args.readTime,
+        views: 0,
+        likes: 0,
     });
         return blogArticle;
     },
@@ -100,7 +103,6 @@ export const searchPost = query({
     handler: async (ctx, args) => {
         const limit = args.limit;
         const results: Array<searchResultType> = [];
-        // we search againt body and title so to avoid duplicate
         const seen = new Set();
 
         const pushDocs = async (docs: Array<Doc<'posts'>>) => {
@@ -141,5 +143,70 @@ export const getMediaUrl = mutation({
     handler: async (ctx, args) => {
         const url = await ctx.storage.getUrl(args.storageId);
         return url;
+    }
+});
+
+export const incrementView = mutation({
+    args: { postId: v.id("posts") },
+    handler: async (ctx, args) => {
+        const post = await ctx.db.get(args.postId);
+        if (!post) return;
+        await ctx.db.patch(args.postId, { views: (post.views ?? 0) + 1 });
+    }
+});
+
+export const toggleLike = mutation({
+    args: { postId: v.id("posts") },
+    handler: async (ctx, args) => {
+        const user = await authComponent.safeGetAuthUser(ctx);
+        if (!user) throw new ConvexError('Authentication required to like posts.');
+
+        const existingLike = await ctx.db
+            .query("likes")
+            .withIndex("by_post_user", (q) => q.eq("postId", args.postId).eq("userId", user._id))
+            .unique();
+
+        const post = await ctx.db.get(args.postId);
+        const currentLikes = post?.likes ?? 0;
+
+        if (existingLike) {
+            await ctx.db.delete(existingLike._id);
+            await ctx.db.patch(args.postId, { likes: Math.max(0, currentLikes - 1) });
+        } else {
+            await ctx.db.insert("likes", { postId: args.postId, userId: user._id });
+            await ctx.db.patch(args.postId, { likes: currentLikes + 1 });
+        }
+    }
+});
+
+export const getLikeStatus = query({
+    args: { postId: v.id("posts") },
+    handler: async (ctx, args) => {
+        const user = await authComponent.safeGetAuthUser(ctx);
+        if (!user) return false;
+        const existingLike = await ctx.db
+            .query("likes")
+            .withIndex("by_post_user", (q) => q.eq("postId", args.postId).eq("userId", user._id))
+            .unique();
+        return !!existingLike;
+    }
+});
+
+export const getMyPosts = query({
+    args: {},
+    handler: async (ctx) => {
+        const user = await authComponent.safeGetAuthUser(ctx);
+        if (!user) return [];
+        
+        const posts = await ctx.db
+            .query("posts")
+            .withIndex("by_author", (q) => q.eq("authorId", user._id))
+            .order("desc")
+            .collect();
+
+        return Promise.all(posts.map(async (post) => {
+            const resolvedImageURL = post.imageStorageId !== undefined ? await ctx.storage.getUrl(post.imageStorageId) : null;
+            return { ...post, imageURL: resolvedImageURL };
+        }));
     }
 });

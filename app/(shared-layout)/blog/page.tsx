@@ -47,8 +47,9 @@ export default async function BlogIndexPage() {
                                     <p className="text-sm text-muted-foreground line-clamp-3">
                                         {plainTextSummary}
                                     </p>
-                                    <div className="text-xs text-muted-foreground font-medium">
-                                        Posted on: {new Date(post._creationTime).toLocaleDateString()}
+                                    <div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
+                                        <span>By {post.authorName ?? "Anonymous"}</span>
+                                        <span>{new Date(post._creationTime).toLocaleDateString()}</span>
                                     </div>
                                 </CardContent>
                             </Card>

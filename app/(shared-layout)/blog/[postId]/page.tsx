@@ -11,7 +11,8 @@ import { CommentSection } from "@/components/web/commentSection";
 import { Metadata } from "next";
 import { PostPresence } from "@/components/web/PostPresence";
 import { getToken } from "@/lib/auth-server";
-import { PostContent } from "@/components/web/Postcontent";   // ← Client Component
+import { PostContent } from "@/components/web/Postcontent";
+import { PostInteractions } from "@/components/web/PostInteractions";
 
 interface PostIdRouteProps {
     params: Promise<{ postId: Id<'posts'> }>;
@@ -68,13 +69,22 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
             </div>
 
             {/* Title + meta */}
-            <div className="space-y-2 mb-2">
+            <div className="space-y-4 mb-2">
                 <h1 className="text-4xl font-bold tracking-tight text-foreground">{post.title}</h1>
-                <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                        Posted on: {new Date(post._creationTime).toLocaleDateString()}
-                    </p>
-                    {userID && <PostPresence roomId={post._id} userID={userID} />}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">
+                            By {post.authorName ?? "Anonymous"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Posted on {new Date(post._creationTime).toLocaleDateString()}
+                        </p>
+                    </div>
+                    <PostInteractions 
+                        postId={post._id} 
+                        initialViews={post.views ?? 0} 
+                        initialLikes={post.likes ?? 0} 
+                    />
                 </div>
             </div>
 

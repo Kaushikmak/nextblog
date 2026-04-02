@@ -6,16 +6,25 @@ export default defineSchema({
         title: v.string(),
         body: v.string(),
         authorId: v.string(),
+        authorName: v.optional(v.string()), 
         imageStorageId: v.optional(v.id("_storage")),
         headerImageUrl: v.optional(v.string()), 
         summary: v.optional(v.string()),        
         wordCount: v.optional(v.number()), 
         readTime: v.optional(v.number()),
+        views: v.optional(v.number()), 
+        likes: v.optional(v.number()), 
     }).searchIndex('search_title',{
         searchField: 'title',
     }).searchIndex('search_body',{
         searchField: 'body',
-    }),
+    }).index('by_author', ['authorId']),
+
+    likes: defineTable({
+        postId: v.id('posts'),
+        userId: v.string(),
+    }).index('by_post_user', ['postId', 'userId']),
+
     comments: defineTable({
         postId: v.id('posts'),
         authorId: v.string(),
