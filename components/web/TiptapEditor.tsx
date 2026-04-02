@@ -9,21 +9,20 @@ import TextAlign from '@tiptap/extension-text-align'
 import Color from '@tiptap/extension-color'
 import { TextStyle } from '@tiptap/extension-text-style'
 import FontFamily from '@tiptap/extension-font-family'
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
-import { common, createLowlight } from 'lowlight'
 import { Markdown } from 'tiptap-markdown'
 import { useEffect, useState } from 'react'
 import { EditorStatsBar } from './EditorStatsBar'
 import { EditorMenuBar } from './EditorMenuBar'
 import { Button } from '@/components/ui/button'
 import { FileCode2, Type } from 'lucide-react'
-// @ts-expect-error: CSS module import without type declarations
-import 'highlight.js/styles/atom-one-dark.css'
+import CodeBlock from '@tiptap/extension-code-block'
+import { ReactNodeViewRenderer } from '@tiptap/react'
+import CodeBlockComponent from './CodeBlockComponent'
+
 
 // IMPORTANT: Re-import your custom media extensions
 import { VideoNode, AudioNode } from './media-extensions'
 
-const lowlight = createLowlight(common)
 
 interface TiptapEditorProps {
     content: string;
@@ -61,11 +60,10 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
                 height: 480,
             }),
             // BUG 1 FIX: Added styling attributes to the code block
-            CodeBlockLowlight.configure({
-                lowlight,
-                HTMLAttributes: {
-                    class: 'block bg-zinc-950 text-zinc-50 rounded-lg p-4 font-mono text-sm my-4 overflow-x-auto',
-                },
+            CodeBlock.extend({
+                addNodeView() {
+                    return ReactNodeViewRenderer(CodeBlockComponent)
+                }
             }),
             // RESTORED MEDIA NODES
             VideoNode,
