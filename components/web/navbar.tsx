@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation"; // Added usePathname
+import { useRouter, usePathname } from "next/navigation";
 import { useConvexAuth } from "convex/react";
-import { Menu, X } from "lucide-react"; // Removed unused TerminalSquare
+import { Menu, X } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "../ui/button";
@@ -17,21 +17,26 @@ export function Navbar() {
   const { data: session } = authClient.useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
-  const pathname = usePathname(); // Get current path for active states
+  const pathname = usePathname();
 
-  const navLinks = [
+  // Define public links
+  const baseLinks = [
     { name: "Home", href: "/" },
     { name: "Blog", href: "/blog" },
-    { name: "Authors", href: "/authors" }, // Added missing Authors link
-    { name: "Create", href: "/create" },
+    { name: "Authors", href: "/authors" },
   ];
+
+  // Conditionally add the Create link only if authenticated
+  const navLinks = isAuthenticated 
+    ? [...baseLinks, { name: "Create", href: "/create" }] 
+    : baseLinks;
 
   const handleSignOut = () => {
     authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
           toast.success("Logged out successfully");
-          setIsMobileMenuOpen(false); // Close menu on logout
+          setIsMobileMenuOpen(false);
           router.push("/");
         },
         onError: (ctx) => {
@@ -63,7 +68,7 @@ export function Navbar() {
                   key={link.name} 
                   className={cn(
                     buttonVariants({ variant: "ghost" }),
-                    pathname === link.href && "bg-muted text-primary" // Highlight active link
+                    pathname === link.href && "bg-muted text-primary"
                   )} 
                   href={link.href}
                 >
@@ -116,7 +121,7 @@ export function Navbar() {
               <Link 
                 key={link.name} 
                 href={link.href} 
-                onClick={() => setIsMobileMenuOpen(false)} // Close menu on click
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={cn(
                     buttonVariants({ variant: "ghost" }), 
                     "justify-start",
@@ -146,20 +151,8 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link 
-                    className={buttonVariants()} 
-                    href="/auth/signup" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Sign up
-                  </Link>
-                  <Link 
-                    className={buttonVariants({ variant: "secondary" })} 
-                    href="/auth/login" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Login
-                  </Link>
+                  <Link className={buttonVariants()} href="/auth/signup" onClick={() => setIsMobileMenuOpen(false)}>Sign up</Link>
+                  <Link className={buttonVariants({ variant: "secondary" })} href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>Login</Link>
                 </>
               )
             )}
