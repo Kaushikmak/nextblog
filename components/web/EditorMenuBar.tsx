@@ -121,13 +121,25 @@ export function EditorMenuBar({ editor }: { editor: Editor | null }) {
             
             {/* Font & Headings */}
             <select 
-                className="bg-transparent text-sm border rounded px-1"
-                onChange={(e) => editor.chain().focus().toggleHeading({ level: parseInt(e.target.value) as any }).run()}
+                className="bg-background text-foreground text-sm border rounded px-2 py-1 focus:outline-none dark:bg-zinc-950 dark:text-zinc-50"
+                value={
+                    editor.isActive('heading', { level: 1 }) ? '1' :
+                    editor.isActive('heading', { level: 2 }) ? '2' :
+                    editor.isActive('heading', { level: 3 }) ? '3' : '0'
+                }
+                onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (val === 0) {
+                        editor.chain().focus().setParagraph().run();
+                    } else {
+                        editor.chain().focus().toggleHeading({ level: val as any }).run();
+                    }
+                }}
             >
-                <option value="0">Paragraph</option>
-                <option value="1">H1</option>
-                <option value="2">H2</option>
-                <option value="3">H3</option>
+                <option value="0" className="dark:bg-zinc-950">Paragraph</option>
+                <option value="1" className="dark:bg-zinc-950">H1</option>
+                <option value="2" className="dark:bg-zinc-950">H2</option>
+                <option value="3" className="dark:bg-zinc-950">H3</option>
             </select>
 
             {/* Alignment */}
