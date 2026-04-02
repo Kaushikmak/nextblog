@@ -17,6 +17,7 @@ import { EditorStatsBar } from './EditorStatsBar'
 import { EditorMenuBar } from './EditorMenuBar'
 import { Button } from '@/components/ui/button'
 import { FileCode2, Type } from 'lucide-react'
+// @ts-expect-error: CSS module import without type declarations
 import 'highlight.js/styles/atom-one-dark.css'
 
 // IMPORTANT: Re-import your custom media extensions
