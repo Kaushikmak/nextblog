@@ -17,6 +17,37 @@ import { Id } from "@/convex/_generated/dataModel";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import Link from "next/link";
 import { Navbar } from "@/components/web/navbar";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Draft a New Insight", // Becomes "Draft a New Insight | MutexBlog"
+  description: "Access the MutexBlog technical editor to compose and publish discourse on core computer science and mathematics.",
+  
+  // Robots settings: Exclude creation tools from search results
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+
+  // Open Graph for internal consistency
+  openGraph: {
+    title: "MutexBlog Editor",
+    description: "Compose atomic updates for engineers.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "MutexBlog Editor Interface",
+      },
+    ],
+  },
+};
 
 export default function CreatePostPage() {
     const [isPending, setIsPending] = useState(false);
