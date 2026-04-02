@@ -70,7 +70,9 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         immediatelyRender: false,
         onUpdate: ({ editor }) => {
             if (!isMarkdownMode) {
-                onChange(editor.getHTML());
+                const storage = editor.storage as any;
+                const md = storage.markdown.getMarkdown();
+                onChange(md);
             }
         },
         editorProps: {
@@ -82,7 +84,8 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
 
     useEffect(() => {
         if (editor && !isMarkdownMode && content !== editor.getHTML()) {
-            editor.commands.setContent(content);
+            const storage = editor.storage as any;
+            editor.commands.setContent(storage.markdown.parse(content));
         }
     }, [content, editor, isMarkdownMode]);
 
@@ -93,7 +96,9 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     const toggleMode = () => {
         if (isMarkdownMode) {
             editor.commands.setContent(markdownText);
-            onChange(editor.getHTML());
+            const storage = editor.storage as any;
+            const md = storage.markdown.getMarkdown();
+            onChange(md);
             setIsMarkdownMode(false);
         } else {
             const storage = editor.storage as Record<string, any>;
@@ -107,7 +112,9 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         const newMd = e.target.value;
         setMarkdownText(newMd);
         editor.commands.setContent(newMd);
-        onChange(editor.getHTML());
+        const storage = editor.storage as any;
+        const md = storage.markdown.getMarkdown();
+        onChange(md);
     };
 
     return (
