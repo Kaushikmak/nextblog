@@ -19,8 +19,8 @@ interface PostIdRouteProps {
 }
 
 export async function generateMetadata({ params }: PostIdRouteProps): Promise<Metadata> {
-    const { postId } = await params; //
-    const post = await fetchQuery(api.posts.getPostById, { postId }); //
+    const { postId } = await params;
+    const post = await fetchQuery(api.posts.getPostById, { postId });
 
     if (!post) {
         return { 
@@ -29,27 +29,23 @@ export async function generateMetadata({ params }: PostIdRouteProps): Promise<Me
         };
     }
 
-    // Strip HTML for a clean search engine snippet
-    const plainDescription = post.body
-        .replace(/<[^>]*>/g, '')
-        .slice(0, 160)
-        .trim();
-
+    const plainDescription = post.body.replace(/<[^>]*>/g, '').slice(0, 160).trim();
     const siteTitle = "MutexBlog";
-    const postImage = post.imageURL || "/og-image.png"; // Fallback to site default
+    const postImage = post.imageURL || "/og-image.png";
+
+    // Combine all authors for the metadata tags
+    const allAuthorNames = [post.authorName ?? "Anonymous", ...(post.resolvedCoAuthors?.map((a: any) => a.name) || [])];
 
     return {
-        title: post.title, // Becomes "Post Title | MutexBlog" via layout template
-        description: plainDescription, //
-        
-        // Open Graph for LinkedIn, Discord, and Facebook
+        title: post.title, 
+        description: plainDescription, 
         openGraph: {
             title: post.title,
             description: plainDescription,
             type: "article",
             url: `https://nextblog-ov87.vercel.app/blog/${postId}`,
-            publishedTime: new Date(post._creationTime).toISOString(), //
-            authors: [post.authorName ?? "Anonymous"], //
+            publishedTime: new Date(post._creationTime).toISOString(),
+            authors: allAuthorNames, // Updated to include co-authors
             images: [
                 {
                     url: postImage,
@@ -59,13 +55,11 @@ export async function generateMetadata({ params }: PostIdRouteProps): Promise<Me
                 },
             ],
         },
-
-        // Twitter/X Card Metadata
         twitter: {
             card: "summary_large_image",
             title: post.title,
             description: plainDescription,
-            creator: "@KmaK69837720", //
+            creator: "@KmaK69837720", 
             images: [postImage],
         },
     };
@@ -89,15 +83,21 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
         );
     }
 
+    // Combine primary author and co-authors into one array for rendering
+    const allAuthors = [
+        { id: post.authorId, name: post.authorName ?? "Anonymous" },
+        ...(post.resolvedCoAuthors || [])
+    ];
+
     return (
         <div className="max-w-4xl mx-auto py-8 px-4 animate-in fade-in duration-500">
             <Link href="/blog" className={buttonVariants({ variant: "ghost", size: "sm", className: "mb-4" })}>
-                <ArrowLeft />
+                <ArrowLeft className="mr-2 size-4" />
                 back to blog
             </Link>
 
             {/* Hero image */}
-            <div className="relative w-full h-72 mb-8 rounded-xl overflow-hidden shadow-sm">
+            <div className="relative w-full h-72 mb-8 rounded-xl overflow-hidden shadow-sm border">
                 <Image
                     fill
                     src={post.imageURL ?? "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop"}
@@ -113,11 +113,18 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-4">
-                            <p className="text-sm font-semibold text-foreground">
-                                By {post.authorName ?? "Anonymous"}
+                            <p className="text-sm font-semibold text-foreground flex flex-wrap gap-1 items-center">
+                                By {allAuthors.map((author, index) => (
+                                    <span key={author.id}>
+                                        <Link href={`/authors/${author.id}`} className="hover:underline hover:text-primary transition-colors">
+                                            {author.name}
+                                        </Link>
+                                        {/* Dynamic Grammar: comma for list, '&' for last item */}
+                                        {index < allAuthors.length - 1 ? (index === allAuthors.length - 2 ? " & " : ", ") : ""}
+                                    </span>
+                                ))}
                             </p>
                             
-                            {/* RESTORED: Presence Component */}
                             <PostPresence roomId={post._id} userID={userID} />
                         </div>
                         
@@ -126,7 +133,6 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
                         </p>
                     </div>
                     
-                    {/* Interactions Component */}
                     <PostInteractions 
                         postId={post._id} 
                         initialViews={post.views ?? 0} 
@@ -137,13 +143,6 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
 
             <Separator className="my-8" />
 
-            {/*
-                PostContent is a Client Component — it needs the DOM to run hljs.
-                It renders the saved HTML with:
-                  - Styled headings, paragraphs, lists, blockquotes
-                  - Syntax-highlighted code blocks (same look as the editor)
-                  - Styled inline code pills
-            */}
             <PostContent html={post.body} />
 
             <Separator className="my-8" />

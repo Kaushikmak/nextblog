@@ -75,7 +75,7 @@ export const getImageUploadURL = mutation({
 export const getPostById = query({
     args: {postId: v.id("posts")},
     handler: async (ctx, args) => {
-        const post = await ctx.db.get("posts", args.postId);
+        const post = await ctx.db.get(args.postId);
 
         if(!post){
             throw new ConvexError('Post not found')
@@ -83,9 +83,20 @@ export const getPostById = query({
 
         const resolvedImageURL = post.imageStorageId !== undefined ? await ctx.storage.getUrl(post.imageStorageId) : null;
 
+        let resolvedCoAuthors: Array<{ id: string, name: string }> = [];
+        if (post.coAuthors && post.coAuthors.length > 0) {
+            const profiles = await Promise.all(
+                post.coAuthors.map(id => ctx.db.query("profiles").withIndex("by_userId", q => q.eq("userId", id)).unique())
+            );
+            resolvedCoAuthors = profiles
+                .filter(p => p !== null)
+                .map(p => ({ id: p!.userId, name: p!.name || "Author" }));
+        }
+
         return {
             ...post,
-            imageURL: resolvedImageURL
+            imageURL: resolvedImageURL,
+            resolvedCoAuthors // Return the resolved array to the frontend
         }
     }
 });
