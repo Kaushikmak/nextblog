@@ -38,14 +38,14 @@ export async function generateMetadata({ params }: PostIdRouteProps): Promise<Me
 
     return {
         title: post.title, 
-        description: plainDescription, 
+        description: post.summary || plainDescription, // Use summary for SEO if it exists 
         openGraph: {
             title: post.title,
-            description: plainDescription,
+            description: post.summary || plainDescription,
             type: "article",
             url: `https://nextblog-ov87.vercel.app/blog/${postId}`,
             publishedTime: new Date(post._creationTime).toISOString(),
-            authors: allAuthorNames, // Updated to include co-authors
+            authors: allAuthorNames, 
             images: [
                 {
                     url: postImage,
@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: PostIdRouteProps): Promise<Me
         twitter: {
             card: "summary_large_image",
             title: post.title,
-            description: plainDescription,
+            description: post.summary || plainDescription,
             creator: "@KmaK69837720", 
             images: [postImage],
         },
@@ -107,8 +107,17 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
             </div>
 
             {/* Title + meta */}
-            <div className="space-y-4 mb-2">
-                <h1 className="text-4xl font-bold tracking-tight text-foreground">{post.title}</h1>
+            <div className="space-y-6 mb-2">
+                <div className="space-y-4">
+                    <h1 className="text-4xl font-bold tracking-tight text-foreground break-words">{post.title}</h1>
+                    
+                    {/* NEW: Render the summary blockquote just like the Live Preview */}
+                    {post.summary && (
+                        <p className="text-xl text-muted-foreground border-l-4 border-primary pl-4 italic break-words">
+                            {post.summary}
+                        </p>
+                    )}
+                </div>
                 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-3">
