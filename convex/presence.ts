@@ -33,26 +33,24 @@ export const list = query({
   args: { roomToken: v.string() },
   handler: async (ctx, { roomToken }) => {
     const entries = await presence.list(ctx, roomToken);
-    
+
+    const seenIds = new Set<string>();
+    const deduped = entries.filter((item) => {
+      if (seenIds.has(item.userId)) return false;
+      seenIds.add(item.userId);
+      return true;
+    });
+
     return await Promise.all(
-        entries.map(async (item) => {
-            // FIX: Reverted to 'userId' as per your TypeScript error
-            const id = item.userId; 
-            const isAnonymous = id.startsWith("anon_");
-            
-            if (isAnonymous) {
-                return { ...item, name: "Guest" };
-            }
+      deduped.map(async (item) => {
+        const id = item.userId;
+        if (id.startsWith("anon_")) return { ...item, name: "Guest" };
 
-            const user = await authComponent.getAnyUserById(ctx, id);
-            if (!user) return item;
+        const user = await authComponent.getAnyUserById(ctx, id);
+        if (!user) return item;
 
-            return {
-                ...item,
-                name: user.name,
-                picture: user.image 
-            };
-        })
+        return { ...item, name: user.name, picture: user.image };
+      })
     );
   },
 });
