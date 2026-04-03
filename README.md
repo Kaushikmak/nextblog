@@ -122,6 +122,16 @@ sampleData.jsonl        → Seed data for development
 
 ---
 
+## ARCHITECTURE
+![SCHEMA](./public/Next.js%20Client-2026-04-03-130722.svg)
+###### SCHEMA
+![SCHEMA](./public/diagram-export-4-3-2026-6_27_24-PM.svg)
+###### SERVER
+![MutexBlog Architecture Diagram](./public/diagram-export-4-3-2026-6_30_36-PM.svg)
+###### NEXT APP
+![MutexBlog Architecture Diagram](./public/diagram-export-4-3-2026-6_30_42-PM.svg)
+
+
 ## Deployment
 
 ### Backend (Convex)
@@ -181,7 +191,7 @@ The build command (`pnpm build`) runs `npx convex deploy && next build` to ensur
 
 This project is open-source and available for modification and distribution.
 
----
+--- 
 
 ## Author
 
