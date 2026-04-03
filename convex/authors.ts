@@ -6,30 +6,41 @@ import { authComponent } from "./auth";
 export const getAuthorsList = query({
     args: {},
     handler: async (ctx) => {
-        const posts = await ctx.db.query("posts").order("desc").collect();
         const profiles = await ctx.db.query("profiles").collect();
-        const profileMap = new Map(profiles.map(p => [p.userId, p]));
+        const posts = await ctx.db.query("posts").collect();
         
         const authorMap = new Map();
+
+        // 1. Initialize map with all registered profiles (postCount defaults to 0)
+        for (const p of profiles) {
+            authorMap.set(p.userId, {
+                authorId: p.userId,
+                name: p.name || "Anonymous Author",
+                handle: p.handle || `author-${p.userId.slice(-4)}`,
+                postCount: 0,
+            });
+        }
+        
+        // 2. Process all posts to increment counts and catch missing/ghost profiles
         for (const post of posts) {
-            if (!authorMap.has(post.authorId)) {
+            if (authorMap.has(post.authorId)) {
+                authorMap.get(post.authorId).postCount++;
+            } else {
+                // Fallback for posts authored by users without an explicit profile entry
                 const authorName = post.authorName ?? "Anonymous Author";
-                const existingProfile = profileMap.get(post.authorId);
-                
                 const fallbackHandle = authorName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + post.authorId.slice(-4);
                 
                 authorMap.set(post.authorId, {
                     authorId: post.authorId,
-                    // FIX: Prioritize explicit profile name over post authorName
-                    name: existingProfile?.name || authorName, 
-                    handle: existingProfile?.handle || fallbackHandle,
+                    name: authorName, 
+                    handle: fallbackHandle,
                     postCount: 1,
                 });
-            } else {
-                authorMap.get(post.authorId).postCount++;
             }
         }
-        return Array.from(authorMap.values());
+
+        // Return array sorted by post count (descending)
+        return Array.from(authorMap.values()).sort((a, b) => b.postCount - a.postCount);
     }
 });
 

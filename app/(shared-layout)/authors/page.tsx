@@ -18,10 +18,14 @@ export default function AuthorsDirectoryPage() {
         return <div className="flex justify-center py-20"><Loader2 className="size-8 animate-spin text-muted-foreground" /></div>;
     }
 
-    const filteredAuthors = authors.filter(author => 
-        author.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        author.handle.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredAuthors = authors.filter(author => {
+        const term = searchTerm.toLowerCase();
+        return (
+            (author.name?.toLowerCase() || "").includes(term) ||
+            (author.handle?.toLowerCase() || "").includes(term) ||
+            (author.authorId?.toLowerCase() || "").includes(term)
+        );
+    });
 
     return (
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-500">
