@@ -43,8 +43,12 @@ const TabExtension = Extension.create({
         return {
             Tab: () => {
                 // Return false to allow default indentation behavior inside lists
-                if (this.editor.isActive('listItem')) {
-                    return false;
+                if (
+                    this.editor.isActive('bulletList') || 
+                    this.editor.isActive('orderedList') || 
+                    this.editor.isActive('listItem')
+                ) {
+                    return false; 
                 }
                 // Insert 4 spaces and stop event propagation
                 return this.editor.commands.insertContent('    ');
