@@ -7,22 +7,23 @@
  * so React never wipes the hljs-enhanced nodes on re-render.
  *
  * Features:
- *  - Syntax-highlighted fenced code blocks (same shell as editor CodeBlockComponent)
- *  - Styled inline <code> pills with hljs colouring
- *  - Proper h1 / h2 / h3 / prose typography via Tailwind prose classes
- *  - Copy buttons that survive re-renders
+ * - Strict HTML Sanitization (Blocks CSS injection and Scripts)
+ * - Syntax-highlighted fenced code blocks
+ * - Styled inline <code> pills with hljs colouring
+ * - Proper h1 / h2 / h3 / prose typography via Tailwind prose classes
+ * - Copy buttons that survive re-renders
  */
 
 import { useEffect, useRef } from 'react'
 import hljs from 'highlight.js'
-// import 'highlight.js/styles/github-dark.css'
+import DOMPurify from 'isomorphic-dompurify';
+import React from 'react';
 
 interface PostContentProps {
     html: string
     className?: string
 }
 
-// SVG icons as strings to avoid React in plain DOM nodes
 const COPY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
@@ -134,7 +135,6 @@ function enhanceContainer(container: HTMLDivElement) {
 
 export function PostContent({ html, className = '' }: PostContentProps) {
     const ref = useRef<HTMLDivElement>(null)
-    // Track the last html we injected so we only reset innerHTML when content actually changes
     const lastHtml = useRef<string>('')
 
     useEffect(() => {
@@ -142,45 +142,44 @@ export function PostContent({ html, className = '' }: PostContentProps) {
         if (!container) return
 
         if (html !== lastHtml.current) {
-            // Only reset innerHTML when the HTML string actually changes.
-            // This prevents React re-renders (e.g. parent state updates) from wiping
-            // the enhanced DOM nodes when the content hasn't changed.
-            container.innerHTML = html
-            lastHtml.current = html
+            // STRICT SANITIZATION APPLIED HERE
+            // This happens before the HTML touches the DOM
+            const sanitizedHtml = DOMPurify.sanitize(html, {
+                ALLOWED_TAGS: [
+                    'p', 'b', 'i', 'em', 'strong', 'a', 
+                    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                    'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'br', 'hr', 'img'
+                ],
+                // We MUST allow 'class' so Tiptap's language-xx classes survive for hljs
+                // 'style' is explicitly omitted to prevent CSS injection
+                ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'class'], 
+                ALLOW_DATA_ATTR: false, // Prevents any smuggled dataset payloads
+            });
+
+            container.innerHTML = sanitizedHtml;
+            lastHtml.current = html;
         }
 
-        // Always re-run enhancement — it's idempotent thanks to data-enhanced guards
+        // Always re-run enhancement
         enhanceContainer(container)
     })
-    // No dep array — runs after every render, but innerHTML only resets on actual html changes.
-    // This ensures newly typed content (new pre/code nodes) is always enhanced promptly.
 
     return (
         <div
             ref={ref}
             className={[
                 'prose dark:prose-invert max-w-none',
-                // Headings — explicit sizes so they're never collapsed by prose reset
                 '[&_h1]:text-4xl [&_h1]:font-extrabold [&_h1]:tracking-tight [&_h1]:mt-8 [&_h1]:mb-4',
                 '[&_h2]:text-3xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:mt-8 [&_h2]:mb-3',
                 '[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2',
-                // Paragraphs
                 '[&_p]:leading-7 [&_p]:my-4',
-                // Blockquote
                 '[&_blockquote]:border-l-4 [&_blockquote]:border-zinc-400 [&_blockquote]:pl-4 [&_blockquote]:italic',
-                // Links
                 '[&_a]:text-blue-500 [&_a]:underline [&_a]:underline-offset-2',
-                // Lists
                 '[&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6',
-                // Images
                 '[&_img]:rounded-lg [&_img]:border [&_img]:border-muted',
-                // Suppress prose overriding our code block wrapper background
                 '[&_.not-prose]:!mt-6',
                 className,
             ].join(' ')}
         />
-        // Note: NO dangerouslySetInnerHTML here — content is set via ref.current.innerHTML
-        // in the effect above. This prevents React from ever diffing/replacing the
-        // hljs-enhanced DOM nodes.
     )
 }
