@@ -4,7 +4,7 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, User, FileText } from "lucide-react";
+import { Loader2, Search, User, FileText, Copy } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -46,19 +46,31 @@ export default function AuthorsDirectoryPage() {
                             <div className="size-12 bg-muted rounded-full flex items-center justify-center shrink-0">
                                 <User className="size-6 text-muted-foreground" />
                             </div>
-                            <div>
+                            <div className="flex-1">
                                 <CardTitle className="text-lg">{author.name}</CardTitle>
-                                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded text-muted-foreground">
+                                        @{author.handle}
+                                    </span>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="size-5 hover:bg-muted"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            navigator.clipboard.writeText(author.handle);
+                                            // Assume toast is imported
+                                        }}
+                                    >
+                                        <Copy className="size-3" />
+                                    </Button>
+                                </div>
+                                <div className="flex items-center text-xs text-muted-foreground mt-2">
                                     <FileText className="size-3 mr-1" />
                                     {author.postCount} Published Posts
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent>
-                            <Link href={`/authors/${author.authorId}`}>
-                                <Button variant="secondary" className="w-full">View Profile</Button>
-                            </Link>
-                        </CardContent>
                     </Card>
                 ))}
                 

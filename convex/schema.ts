@@ -38,11 +38,14 @@ export default defineSchema({
 
     profiles: defineTable({
         userId: v.string(),
+        name: v.optional(v.string()),  
+        handle: v.optional(v.string()),
         phone: v.optional(v.string()),
         bio: v.optional(v.string()),
         website: v.optional(v.string()),
         location: v.optional(v.string()),
-    }).index("by_userId", ["userId"]),
+    }).index("by_userId", ["userId"])
+    .index("by_handle", ["handle"]),
 
     follows: defineTable({
         followerId: v.string(),

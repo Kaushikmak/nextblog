@@ -31,7 +31,11 @@ import { VideoNode, AudioNode } from './media-extensions'
 import { Button } from '@/components/ui/button'
 import { FileCode2, Type } from 'lucide-react'
 
-import type { TiptapEditorProps } from './TiptapEditor'
+// Define and export the interface here as the single source of truth
+export interface TiptapEditorProps {
+    content: string
+    onChange: (html: string) => void
+}
 
 const lowlight = createLowlight(common)
 
@@ -41,7 +45,6 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
     const initialised = useRef(false)
 
     const editor = useEditor({
-        // immediatelyRender:false is still good practice even though we're client-only
         immediatelyRender: false,
         extensions: [
             StarterKit.configure({ codeBlock: false }),
@@ -77,6 +80,8 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
         ],
         content: '',
         onUpdate: ({ editor }) => {
+            // Lock initialization if the user types manually before any async load
+            initialised.current = true;
             if (!isSourceMode) onChange(editor.getHTML())
         },
         editorProps: {
@@ -86,13 +91,14 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
         },
     })
 
-    // Set initial content once
+    // Delay hydration lock until content is truthy to resolve race conditions
     useEffect(() => {
         if (!editor || initialised.current) return
         if (content) {
             editor.commands.setContent(content)
+            setSourceHtml(content) // Ensure source mode is synced on initial load
+            initialised.current = true
         }
-        initialised.current = true
     }, [editor, content])
 
     const toggleMode = () => {
@@ -187,7 +193,7 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
                         value={sourceHtml}
                         onChange={handleSourceChange}
                         className="absolute inset-0 w-full h-full p-6 bg-zinc-950 text-zinc-50 font-mono text-sm leading-relaxed resize-none focus:outline-none"
-                        placeholder="<!-- Write raw HTML here... -->"
+                        placeholder=""
                         spellCheck={false}
                     />
                 ) : (

@@ -1,4 +1,3 @@
-// convex/profiles.ts
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { authComponent } from "./auth";
@@ -8,16 +7,14 @@ export const getMyProfile = query({
     handler: async (ctx) => {
         const user = await authComponent.safeGetAuthUser(ctx);
         if (!user) return null;
-        
-        return await ctx.db
-            .query("profiles")
-            .withIndex("by_userId", (q) => q.eq("userId", user._id))
-            .unique();
+        return await ctx.db.query("profiles").withIndex("by_userId", q => q.eq("userId", user._id)).unique();
     }
 });
 
 export const upsertProfile = mutation({
     args: {
+        name: v.optional(v.string()),
+        handle: v.optional(v.string()),
         phone: v.optional(v.string()),
         bio: v.optional(v.string()),
         website: v.optional(v.string()),
@@ -27,10 +24,14 @@ export const upsertProfile = mutation({
         const user = await authComponent.safeGetAuthUser(ctx);
         if (!user) throw new Error("Unauthorized");
 
-        const existing = await ctx.db
-            .query("profiles")
-            .withIndex("by_userId", (q) => q.eq("userId", user._id))
-            .unique();
+        const existing = await ctx.db.query("profiles").withIndex("by_userId", q => q.eq("userId", user._id)).unique();
+
+        if (args.handle) {
+            const handleOwner = await ctx.db.query("profiles").withIndex("by_handle", q => q.eq("handle", args.handle as string)).unique();
+            if (handleOwner && handleOwner._id !== existing?._id) {
+                throw new Error("Handle is already taken by another author.");
+            }
+        }
 
         if (existing) {
             await ctx.db.patch(existing._id, args);

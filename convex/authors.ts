@@ -6,15 +6,17 @@ import { authComponent } from "./auth";
 export const getAuthorsList = query({
     args: {},
     handler: async (ctx) => {
-        // Aggregate authors by scanning published posts
         const posts = await ctx.db.query("posts").order("desc").collect();
-        const authorMap = new Map();
+        const profiles = await ctx.db.query("profiles").collect();
+        const profileMap = new Map(profiles.map(p => [p.userId, p]));
         
+        const authorMap = new Map();
         for (const post of posts) {
             if (!authorMap.has(post.authorId)) {
                 authorMap.set(post.authorId, {
                     authorId: post.authorId,
                     name: post.authorName ?? "Anonymous Author",
+                    handle: profileMap.get(post.authorId)?.handle || "No Handle", // Map handles to directory
                     postCount: 1,
                 });
             } else {
@@ -93,5 +95,36 @@ export const toggleFollow = mutation({
                 followingId: args.authorId,
             });
         }
+    }
+});
+
+export const searchAuthorsForDropdown = query({
+    args: { searchTerm: v.string() },
+    handler: async (ctx, args) => {
+        if (!args.searchTerm || args.searchTerm.trim() === "") return [];
+        
+        const term = args.searchTerm.toLowerCase().trim();
+        const allProfiles = await ctx.db.query("profiles").collect();
+        
+        // Return top 5 matches based on handle or name
+        return allProfiles
+            .filter(p => 
+                (p.handle && p.handle.toLowerCase().includes(term)) || 
+                (p.name && p.name.toLowerCase().includes(term))
+            )
+            .map(p => ({ id: p.userId, name: p.name || "Author", handle: p.handle }))
+            .slice(0, 5);
+    }
+});
+
+export const getAuthorsByIds = query({
+    args: { userIds: v.array(v.string()) },
+    handler: async (ctx, args) => {
+        const profiles = await Promise.all(
+            args.userIds.map(id => ctx.db.query("profiles").withIndex("by_userId", q => q.eq("userId", id)).unique())
+        );
+        return profiles
+            .filter(p => p !== null)
+            .map(p => ({ id: p!.userId, name: p!.name || "Author", handle: p!.handle }));
     }
 });

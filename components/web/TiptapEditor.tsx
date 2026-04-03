@@ -4,16 +4,10 @@
  * TiptapEditor.tsx
  * ----------------
  * This file is a thin dynamic-import wrapper.
- * The actual editor lives in TiptapEditorInner.tsx and is loaded
- * with ssr:false so useEditor / flushSync never runs during SSR or hydration.
  */
 
 import dynamic from 'next/dynamic'
-
-export interface TiptapEditorProps {
-    content: string
-    onChange: (html: string) => void
-}
+import type { TiptapEditorProps } from './Tiptapeditorinner'
 
 const TiptapEditorInner = dynamic(
     () => import('./Tiptapeditorinner'),

@@ -18,6 +18,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import Link from "next/link";
 import { Navbar } from "@/components/web/navbar";
 import { useSearchParams } from "next/navigation";
+import { X } from "lucide-react";
 
 // Isolate the main logic that uses useSearchParams
 function CreatePostEditor() {
@@ -38,6 +39,11 @@ function CreatePostEditor() {
     const [isPrivate, setIsPrivate] = useState(false); 
     const [coAuthorsStr, setCoAuthorsStr] = useState(""); 
     const [existingPostId, setExistingPostId] = useState<Id<"posts"> | null>(null);
+
+    const [coAuthors, setCoAuthors] = useState<Array<{id: string, name: string}>>([]);
+    const [coAuthorSearchInput, setCoAuthorSearchInput] = useState("");
+    const authorSearchResults = useQuery(api.authors.searchAuthorsForDropdown, { searchTerm: coAuthorSearchInput });
+    const existingCoAuthorsData = useQuery(api.authors.getAuthorsByIds, existingPost?.coAuthors ? { userIds: existingPost.coAuthors } : "skip");
     
     // Media States
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -50,6 +56,12 @@ function CreatePostEditor() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const DRAFT_KEY = "blog_editor_draft";
+
+    useEffect(() => {
+        if (existingCoAuthorsData && existingCoAuthorsData.length > 0 && coAuthors.length === 0) {
+            setCoAuthors(existingCoAuthorsData);
+        }
+    }, [existingCoAuthorsData]);
 
     // Populate state with existing post data for Feature 2
     useEffect(() => {
@@ -146,7 +158,7 @@ function CreatePostEditor() {
                 summary: summary.trim() || undefined,
                 wordCount,
                 readTime,
-                coAuthors: coAuthorsStr.split(",").map(id => id.trim()).filter(id => id.length > 0),
+                coAuthors: coAuthors.map(author => author.id),
                 isPrivate
             };
 
@@ -279,16 +291,58 @@ function CreatePostEditor() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full pt-4 border-t">
-                    <div className="space-y-2">
-                        <Label htmlFor="coAuthors" className="text-sm font-semibold">Co-Authors</Label>
-                        <Input
-                            id="coAuthors"
-                            className="font-medium bg-muted/50 h-9 text-sm"
-                            placeholder="Enter comma-separated user IDs..."
-                            value={coAuthorsStr}
-                            onChange={(e) => setCoAuthorsStr(e.target.value)}
-                        />
-                    </div>
+                    <div className="space-y-2 relative">
+                            <Label className="text-sm font-semibold">Co-Authors</Label>
+                            
+                            {/* Pill Container */}
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {coAuthors.map((author) => (
+                                    <div key={author.id} className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium border border-primary/20">
+                                        {author.name}
+                                        <button 
+                                            type="button"
+                                            onClick={() => setCoAuthors(prev => prev.filter(a => a.id !== author.id))} 
+                                            className="hover:bg-primary/20 rounded-full p-0.5 ml-1 transition-colors"
+                                        >
+                                            <X className="size-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Validation Search Input */}
+                            <Input
+                                className="font-medium bg-muted/50 h-9 text-sm"
+                                placeholder="Type name or @handle to search..."
+                                value={coAuthorSearchInput}
+                                onChange={(e) => setCoAuthorSearchInput(e.target.value)}
+                            />
+
+                            {/* Dropdown Results */}
+                            {coAuthorSearchInput && authorSearchResults !== undefined && (
+                                <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                    {authorSearchResults.length === 0 ? (
+                                        <div className="p-3 text-sm text-muted-foreground text-center">No authors found.</div>
+                                    ) : (
+                                        authorSearchResults.map(result => (
+                                            <div 
+                                                key={result.id} 
+                                                className="flex items-center justify-between p-2 hover:bg-muted cursor-pointer transition-colors"
+                                                onClick={() => {
+                                                    if (!coAuthors.find(a => a.id === result.id)) {
+                                                        setCoAuthors(prev => [...prev, { id: result.id, name: result.name }]);
+                                                    }
+                                                    setCoAuthorSearchInput(""); // Clear input on selection
+                                                }}
+                                            >
+                                                <span className="font-medium text-sm">{result.name}</span>
+                                                <span className="text-xs font-mono text-muted-foreground">@{result.handle}</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     <div className="flex items-center space-x-2 pt-6">
                         <input 
                             type="checkbox" 
