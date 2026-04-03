@@ -69,7 +69,6 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
         extensions: [
             TabExtension, // Inject here
         StarterKit.configure({ codeBlock: false }),
-            StarterKit.configure({ codeBlock: false }),
             TextStyle,
             Color,
             Underline,
