@@ -18,7 +18,6 @@ export default async function BlogIndexPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {posts.map((post) => {
-                    // Strip HTML tags and limit to 150 characters for the summary
                     const plainTextSummary = post.body 
                         ? post.body.replace(/<[^>]*>?/gm, '').substring(0, 150) + "..." 
                         : "No content available.";
@@ -26,12 +25,23 @@ export default async function BlogIndexPage() {
                     const fallbackImage = "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop";
                     const displayImage = post.imageURL || post.headerImageUrl || fallbackImage;
 
+                    // NEW: Combine and format all authors into a readable text string
+                    const allAuthorNames = [
+                        post.authorName ?? "Anonymous",
+                        ...(post.resolvedCoAuthors?.map((a: any) => a.name) || [])
+                    ];
+                    
+                    let displayAuthors = allAuthorNames[0];
+                    if (allAuthorNames.length > 1) {
+                        displayAuthors = allAuthorNames.slice(0, -1).join(", ") + " & " + allAuthorNames[allAuthorNames.length - 1];
+                    }
+
                     return (
                         <Link href={`/blog/${post._id}`} key={post._id}>
                             <Card className="hover:scale-[1.02] transition-transform duration-300 overflow-hidden shadow-sm h-full flex flex-col">
                                 <div className="relative w-full h-48 border-b">
                                     <Image
-                                        src={displayImage} // Use the computed image here
+                                        src={displayImage}
                                         alt={post.title}
                                         fill
                                         className="object-cover"
@@ -45,8 +55,11 @@ export default async function BlogIndexPage() {
                                         {plainTextSummary}
                                     </p>
                                     <div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
-                                        <span>By {post.authorName ?? "Anonymous"}</span>
-                                        <span>{new Date(post._creationTime).toLocaleDateString()}</span>
+                                        {/* Truncate ensures the layout doesn't break if there are 10 co-authors */}
+                                        <span className="truncate max-w-[70%]" title={displayAuthors}>
+                                            By {displayAuthors}
+                                        </span>
+                                        <span className="shrink-0">{new Date(post._creationTime).toLocaleDateString()}</span>
                                     </div>
                                 </CardContent>
                             </Card>

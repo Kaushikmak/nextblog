@@ -41,7 +41,6 @@ export const createPost = mutation({
 export const getPosts = query({
     args: {},
     handler: async (ctx) => {
-        // Filter out records where isPrivate evaluates to true
         const posts = await ctx.db.query('posts')
             .filter(q => q.neq(q.field("isPrivate"), true))
             .order('desc')
@@ -49,9 +48,22 @@ export const getPosts = query({
 
         return Promise.all(posts.map(async (post) => {
             const resolvedImageURL = post.imageStorageId !== undefined ? await ctx.storage.getUrl(post.imageStorageId) : null;
+            
+            // NEW: Resolve co-author profiles
+            let resolvedCoAuthors: Array<{ id: string, name: string }> = [];
+            if (post.coAuthors && post.coAuthors.length > 0) {
+                const profiles = await Promise.all(
+                    post.coAuthors.map(id => ctx.db.query("profiles").withIndex("by_userId", q => q.eq("userId", id)).unique())
+                );
+                resolvedCoAuthors = profiles
+                    .filter(p => p !== null)
+                    .map(p => ({ id: p!.userId, name: p!.name || "Author" }));
+            }
+
             return {
                 ...post,
-                imageURL: resolvedImageURL
+                imageURL: resolvedImageURL,
+                resolvedCoAuthors // Included for the frontend
             }
         }));
     }
@@ -218,7 +230,23 @@ export const getMyPosts = query({
 
         return Promise.all(posts.map(async (post) => {
             const resolvedImageURL = post.imageStorageId !== undefined ? await ctx.storage.getUrl(post.imageStorageId) : null;
-            return { ...post, imageURL: resolvedImageURL };
+            
+            // NEW: Resolve co-author profiles
+            let resolvedCoAuthors: Array<{ id: string, name: string }> = [];
+            if (post.coAuthors && post.coAuthors.length > 0) {
+                const profiles = await Promise.all(
+                    post.coAuthors.map(id => ctx.db.query("profiles").withIndex("by_userId", q => q.eq("userId", id)).unique())
+                );
+                resolvedCoAuthors = profiles
+                    .filter(p => p !== null)
+                    .map(p => ({ id: p!.userId, name: p!.name || "Author" }));
+            }
+
+            return { 
+                ...post, 
+                imageURL: resolvedImageURL, 
+                resolvedCoAuthors // Included for the frontend 
+            };
         }));
     }
 });
