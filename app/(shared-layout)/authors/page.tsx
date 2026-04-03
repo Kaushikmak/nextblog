@@ -8,6 +8,7 @@ import { Loader2, Search, User, FileText, Copy } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function AuthorsDirectoryPage() {
     const authors = useQuery(api.authors.getAuthorsList);
@@ -18,7 +19,8 @@ export default function AuthorsDirectoryPage() {
     }
 
     const filteredAuthors = authors.filter(author => 
-        author.name.toLowerCase().includes(searchTerm.toLowerCase())
+        author.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        author.handle.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -31,7 +33,7 @@ export default function AuthorsDirectoryPage() {
                 <div className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                     <Input 
-                        placeholder="Search authors..." 
+                        placeholder="Search authors or @handles..." 
                         className="pl-9"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -41,7 +43,7 @@ export default function AuthorsDirectoryPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredAuthors.map((author) => (
-                    <Card key={author.authorId} className="hover:border-primary/50 transition-colors">
+                    <Card key={author.authorId} className="hover:border-primary/50 transition-colors flex flex-col">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <div className="size-12 bg-muted rounded-full flex items-center justify-center shrink-0">
                                 <User className="size-6 text-muted-foreground" />
@@ -59,7 +61,7 @@ export default function AuthorsDirectoryPage() {
                                         onClick={(e) => {
                                             e.preventDefault();
                                             navigator.clipboard.writeText(author.handle);
-                                            // Assume toast is imported
+                                            toast.success("Handle copied to clipboard!");
                                         }}
                                     >
                                         <Copy className="size-3" />
@@ -71,6 +73,12 @@ export default function AuthorsDirectoryPage() {
                                 </div>
                             </div>
                         </CardHeader>
+                        {/* FIX: Restored the Link block to enable navigation to profile */}
+                        <CardContent className="mt-auto">
+                            <Link href={`/authors/${author.authorId}`}>
+                                <Button variant="secondary" className="w-full">View Profile</Button>
+                            </Link>
+                        </CardContent>
                     </Card>
                 ))}
                 
