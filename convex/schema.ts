@@ -46,4 +46,14 @@ export default defineSchema({
     }).index("by_follower", ["followerId"])
       .index("by_following", ["followingId"])
       .index("by_follower_following", ["followerId", "followingId"]),
+
+    presenceSessions: defineTable({
+  roomId: v.string(),
+  sessionId: v.string(),
+  userId: v.string(),
+  lastSeen: v.number(),
+  active: v.boolean(),
+})
+  .index("by_room", ["roomId", "active"])
+  .index("by_session", ["sessionId"]),
 });
