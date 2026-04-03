@@ -2,13 +2,14 @@
 
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Eye, Heart, FileText, Loader2, Save, User } from "lucide-react";
+import { Eye, Heart, FileText, Loader2, Save, User, Trash2, Edit } from "lucide-react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
@@ -19,6 +20,10 @@ export default function DashboardPage() {
     const myPosts = useQuery(api.posts.getMyPosts);
     const myProfile = useQuery(api.profiles.getMyProfile);
     const upsertProfile = useMutation(api.profiles.upsertProfile);
+    
+    // Feature 3: Delete Mutation
+    const deletePostMutation = useMutation(api.posts.deletePost);
+    
     const { data: session, isPending: sessionLoading } = authClient.useSession();
 
     // Local State for Forms
@@ -71,6 +76,19 @@ export default function DashboardPage() {
             console.error(error);
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    // Feature 3: Deletion Handler
+    const handleDeletePost = async (postId: Id<"posts">) => {
+        if (window.confirm("Are you sure you want to delete this post? This action is permanent and cannot be undone.")) {
+            try {
+                await deletePostMutation({ id: postId });
+                toast.success("Post deleted successfully");
+            } catch (error) {
+                toast.error("Failed to delete post");
+                console.error("Deletion error:", error);
+            }
         }
     };
 
@@ -144,10 +162,27 @@ export default function DashboardPage() {
                                                 </td>
                                                 <td className="px-6 py-4 text-right">{post.views ?? 0}</td>
                                                 <td className="px-6 py-4 text-right">{post.likes ?? 0}</td>
-                                                <td className="px-6 py-4 text-right">
+                                                <td className="px-6 py-4 flex items-center justify-end gap-2">
                                                     <Link href={`/blog/${post._id}`}>
-                                                        <Button variant="outline" size="sm">View</Button>
+                                                        <Button variant="outline" size="icon" title="View Post">
+                                                            <Eye className="size-4" />
+                                                        </Button>
                                                     </Link>
+                                                    {/* Feature 2 Navigation Link */}
+                                                    <Link href={`/create?editId=${post._id}`}>
+                                                        <Button variant="outline" size="icon" title="Edit Post">
+                                                            <Edit className="size-4" />
+                                                        </Button>
+                                                    </Link>
+                                                    {/* Feature 3 Action Trigger */}
+                                                    <Button 
+                                                        variant="destructive" 
+                                                        size="icon" 
+                                                        title="Delete Post" 
+                                                        onClick={() => handleDeletePost(post._id)}
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                    </Button>
                                                 </td>
                                             </tr>
                                         ))}

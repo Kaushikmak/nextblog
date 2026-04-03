@@ -12,16 +12,15 @@ export const createPost = mutation({
       headerImageUrl: v.optional(v.string()),
       summary: v.optional(v.string()),
       wordCount: v.number(),
-      readTime: v.number()
+      readTime: v.number(),
+      coAuthors: v.optional(v.array(v.string())),
+      isPrivate: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
+    if(!user) throw new ConvexError('User not authenticated');
 
-    if(!user){
-        throw new ConvexError('User not authenticated')
-    }
-
-    const blogArticle = await ctx.db.insert("posts",{
+    return await ctx.db.insert("posts",{
         body: args.body,
         title: args.title,
         authorId: user._id,
@@ -33,26 +32,28 @@ export const createPost = mutation({
         readTime: args.readTime,
         views: 0,
         likes: 0,
+        coAuthors: args.coAuthors ?? [],
+        isPrivate: args.isPrivate ?? false,
     });
-        return blogArticle;
-    },
+  },
 });
 
 export const getPosts = query({
     args: {},
     handler: async (ctx) => {
-        const posts = await ctx.db.query('posts').order('desc').collect();
+        // Filter out records where isPrivate evaluates to true
+        const posts = await ctx.db.query('posts')
+            .filter(q => q.neq(q.field("isPrivate"), true))
+            .order('desc')
+            .collect();
 
         return Promise.all(posts.map(async (post) => {
             const resolvedImageURL = post.imageStorageId !== undefined ? await ctx.storage.getUrl(post.imageStorageId) : null;
-
             return {
                 ...post,
                 imageURL: resolvedImageURL
             }
-
         }));
-        
     }
 });
 
@@ -208,5 +209,56 @@ export const getMyPosts = query({
             const resolvedImageURL = post.imageStorageId !== undefined ? await ctx.storage.getUrl(post.imageStorageId) : null;
             return { ...post, imageURL: resolvedImageURL };
         }));
+    }
+});
+
+export const updatePost = mutation({
+    args: {
+        id: v.id("posts"),
+        title: v.string(),
+        body: v.string(),
+        imageStorageId: v.optional(v.id("_storage")),
+        headerImageUrl: v.optional(v.string()),
+        summary: v.optional(v.string()),
+        wordCount: v.number(),
+        readTime: v.number(),
+        coAuthors: v.optional(v.array(v.string())),
+        isPrivate: v.optional(v.boolean()),
+    },
+    handler: async (ctx, args) => {
+        const user = await authComponent.safeGetAuthUser(ctx);
+        if (!user) throw new ConvexError('User not authenticated');
+
+        const existingPost = await ctx.db.get(args.id);
+        if (!existingPost) throw new ConvexError('Post not found');
+
+        // Access Control Authorization: Only author or co-authors can edit
+        const isAuthor = existingPost.authorId === user._id;
+        const isCoAuthor = existingPost.coAuthors?.includes(user._id) ?? false;
+        if (!isAuthor && !isCoAuthor) throw new ConvexError('Unauthorized to edit this post');
+
+        const { id, ...updates } = args;
+        await ctx.db.patch(id, {
+            ...updates,
+            updatedAt: Date.now() // Record post-publication mutation time
+        });
+        return id;
+    }
+});
+
+// Feature 3: Delete post
+export const deletePost = mutation({
+    args: { id: v.id("posts") },
+    handler: async (ctx, args) => {
+        const user = await authComponent.safeGetAuthUser(ctx);
+        if (!user) throw new ConvexError('User not authenticated');
+
+        const existingPost = await ctx.db.get(args.id);
+        if (!existingPost) throw new ConvexError('Post not found');
+
+        // Strict Access Control: Only original author can delete
+        if (existingPost.authorId !== user._id) throw new ConvexError('Only the original author can delete');
+
+        await ctx.db.delete(args.id);
     }
 });

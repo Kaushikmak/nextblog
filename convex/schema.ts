@@ -14,6 +14,10 @@ export default defineSchema({
         readTime: v.optional(v.number()),
         views: v.optional(v.number()), 
         likes: v.optional(v.number()), 
+        coAuthors: v.optional(v.array(v.string())), 
+        updatedAt: v.optional(v.number()),          
+        isPrivate: v.optional(v.boolean()),         
+        isDraft: v.optional(v.boolean()),
     }).searchIndex('search_title',{
         searchField: 'title',
     }).searchIndex('search_body',{

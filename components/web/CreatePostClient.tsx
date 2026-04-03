@@ -7,23 +7,37 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, Loader2, Download, Copy, Check, ImageIcon, Link as LinkIcon, ArrowLeft } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { toast } from "sonner";
 import { PostContent } from "@/components/web/Postcontent";
 import { buildStandaloneHtml } from "@/lib/Downloadhtml";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import Link from "next/link";
 import { Navbar } from "@/components/web/navbar";
+import { useSearchParams } from "next/navigation";
 
-export default function CreatePostClient() {
+// Isolate the main logic that uses useSearchParams
+function CreatePostEditor() {
+    const searchParams = useSearchParams();
+    const editIdParam = searchParams.get("editId");
+    const editIdToFetch = editIdParam as Id<"posts"> | null;
+
+    // Fetch existing post if editId is provided
+    const existingPost = useQuery(api.posts.getPostById, editIdToFetch ? { postId: editIdToFetch } : "skip");
+
     const [isPending, setIsPending] = useState(false);
     const [title, setTitle] = useState("");
     const [summary, setSummary] = useState("");
     const [content, setContent] = useState("");
     const [copied, setCopied] = useState(false);
+    
+    // States for Features 1, 2, and 5
+    const [isPrivate, setIsPrivate] = useState(false); 
+    const [coAuthorsStr, setCoAuthorsStr] = useState(""); 
+    const [existingPostId, setExistingPostId] = useState<Id<"posts"> | null>(null);
     
     // Media States
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -32,7 +46,59 @@ export default function CreatePostClient() {
 
     const generateUploadUrl = useMutation(api.posts.getImageUploadURL);
     const createPost = useMutation(api.posts.createPost);
+    const updatePostMutation = useMutation(api.posts.updatePost);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const DRAFT_KEY = "blog_editor_draft";
+
+    // Populate state with existing post data for Feature 2
+    useEffect(() => {
+        if (existingPost) {
+            setExistingPostId(existingPost._id);
+            setTitle(existingPost.title);
+            setContent(existingPost.body);
+            setSummary(existingPost.summary || "");
+            setIsPrivate(existingPost.isPrivate || false);
+            setCoAuthorsStr(existingPost.coAuthors?.join(", ") || "");
+
+            // Handle image previews for existing posts
+            if (existingPost.headerImageUrl) {
+                setActiveMediaTab("url");
+                setExternalUrl(existingPost.headerImageUrl);
+            } else if (existingPost.imageURL) {
+                setActiveMediaTab("url");
+                setExternalUrl(existingPost.imageURL); 
+            }
+        }
+    }, [existingPost]);
+
+    // Load draft from Local Storage on initial mount
+    useEffect(() => {
+        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        // Prevent loading local draft if we are explicitly editing an existing post
+        if (savedDraft && !existingPostId && !editIdToFetch) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                if (parsed.title) setTitle(parsed.title);
+                if (parsed.content) setContent(parsed.content);
+                if (parsed.summary) setSummary(parsed.summary);
+                toast.info("Unsaved draft restored");
+            } catch (e) {
+                console.error("Failed to parse local draft", e);
+            }
+        }
+    }, [existingPostId, editIdToFetch]);
+
+    // Save draft synchronously every 5 seconds
+    useEffect(() => {
+        if (existingPostId) return; // Disable auto-save over existing published posts
+        const interval = setInterval(() => {
+            if (title || content || summary) {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, content, summary }));
+            }
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [title, content, summary, existingPostId]);
 
     // Fallback image logic
     const defaultImage = "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop";
@@ -48,9 +114,10 @@ export default function CreatePostClient() {
         
         setIsPending(true);
         try {
-            let storageId: Id<"_storage"> | undefined = undefined;
-            let finalExternalUrl: string | undefined = undefined;
+            let storageId: Id<"_storage"> | undefined = existingPost?.imageStorageId;
+            let finalExternalUrl: string | undefined = existingPost?.headerImageUrl;
 
+            // Only process new media if the user actually uploaded a new file or changed the URL
             if (activeMediaTab === "upload" && selectedFile) {
                 const postUrl = await generateUploadUrl();
                 const result = await fetch(postUrl, {
@@ -62,24 +129,35 @@ export default function CreatePostClient() {
                 if (!result.ok) throw new Error("Failed to upload image");
                 const { storageId: returnedStorageId } = await result.json();
                 storageId = returnedStorageId;
+                finalExternalUrl = undefined; // Clear external URL if using local storage
             } else if (activeMediaTab === "url" && externalUrl.trim()) {
                 finalExternalUrl = externalUrl.trim();
+                storageId = undefined; // Clear storage ID if using external URL
             }
 
             const wordCount = content.replace(/<[^>]*>?/gm, '').split(/\s+/).length;
             const readTime = Math.ceil(wordCount / 200);
 
-            await createPost({
+            const postArgs = {
                 title,
                 body: content,
                 imageStorageId: storageId,
                 headerImageUrl: finalExternalUrl,
                 summary: summary.trim() || undefined,
                 wordCount,
-                readTime
-            });
+                readTime,
+                coAuthors: coAuthorsStr.split(",").map(id => id.trim()).filter(id => id.length > 0),
+                isPrivate
+            };
 
-            toast.success("Blog published successfully!");
+            if (existingPostId) {
+                await updatePostMutation({ id: existingPostId, ...postArgs });
+                toast.success("Blog updated successfully!");
+            } else {
+                await createPost(postArgs);
+                localStorage.removeItem(DRAFT_KEY);
+                toast.success("Blog published successfully!");
+            }
         } catch (error) {
             toast.error("Failed to publish post.");
             console.error(error);
@@ -133,13 +211,13 @@ export default function CreatePostClient() {
                     </Button>
                     <Button onClick={onSubmit} disabled={isPending} size="sm">
                         {isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-                        Publish Post
+                        {existingPostId ? "Update Post" : "Publish Post"}
                     </Button>
                 </div>
             </div>
 
             <div className="shrink-0 border-b bg-background p-4 shadow-sm z-10">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-4">
                     <div className="space-y-2">
                         <Label htmlFor="title" className="text-sm font-semibold">Post Title</Label>
                         <Input
@@ -199,6 +277,31 @@ export default function CreatePostClient() {
                         </Tabs>
                     </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full pt-4 border-t">
+                    <div className="space-y-2">
+                        <Label htmlFor="coAuthors" className="text-sm font-semibold">Co-Authors</Label>
+                        <Input
+                            id="coAuthors"
+                            className="font-medium bg-muted/50 h-9 text-sm"
+                            placeholder="Enter comma-separated user IDs..."
+                            value={coAuthorsStr}
+                            onChange={(e) => setCoAuthorsStr(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center space-x-2 pt-6">
+                        <input 
+                            type="checkbox" 
+                            id="isPrivate" 
+                            checked={isPrivate} 
+                            onChange={(e) => setIsPrivate(e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        />
+                        <Label htmlFor="isPrivate" className="text-sm font-semibold cursor-pointer">
+                            Mark as Private (Hidden from public feed)
+                        </Label>
+                    </div>
+                </div>
             </div>
 
             <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden">
@@ -251,5 +354,14 @@ export default function CreatePostClient() {
                 </ResizablePanel>
             </ResizablePanelGroup>
         </div>
+    );
+}
+
+// Wrap in Suspense because useSearchParams triggers de-opt during build in Next.js
+export default function CreatePostClient() {
+    return (
+        <Suspense fallback={<div className="w-full h-screen flex items-center justify-center">Loading editor...</div>}>
+            <CreatePostEditor />
+        </Suspense>
     );
 }
