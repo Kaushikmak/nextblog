@@ -140,7 +140,7 @@ export function EditorMenuBar({ editor }: EditorMenuBarProps) {
     );
 
     return (
-        <div className="flex flex-wrap gap-1 p-2 border-b bg-background sticky top-0 z-10">
+        <div className="flex flex-wrap gap-1 p-2 border-b bg-background sticky top-0 z-40">
             {/* History */}
             <div className="flex items-center gap-0.5">
                 <MenuButton 

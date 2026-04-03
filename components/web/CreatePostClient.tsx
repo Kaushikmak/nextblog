@@ -360,9 +360,9 @@ function CreatePostEditor() {
 
             <ResizablePanelGroup orientation="horizontal" className="flex-1 !overflow-visible">
                 <ResizablePanel defaultSize={50} minSize={30} className="flex flex-col bg-background !overflow-visible border-r">
-                    <div className="bg-muted/30 border-b px-4 py-2 shrink-0 sticky top-0 z-20">
-                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Editor</span>
-                    </div>
+                    <div className="bg-muted/30 border-b px-4 py-2 shrink-0">
+    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Editor</span>
+</div>
                     <div className="flex-1 p-4">
                         <TiptapEditor content={content} onChange={setContent} />
                     </div>
@@ -371,10 +371,10 @@ function CreatePostEditor() {
                 <ResizableHandle withHandle />
 
                 <ResizablePanel defaultSize={50} minSize={30} className="bg-[#f8f9fa] dark:bg-zinc-950 flex flex-col !overflow-visible hidden md:flex">
-                    <div className="bg-background/80 backdrop-blur-sm border-b px-4 py-2 shrink-0 flex items-center gap-2 sticky top-0 z-20">
-                        <Eye className="size-4 text-muted-foreground" />
-                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live Preview</span>
-                    </div>
+                    <div className="bg-background/80 backdrop-blur-sm border-b px-4 py-2 shrink-0 flex items-center gap-2">
+    <Eye className="size-4 text-muted-foreground" />
+    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live Preview</span>
+</div>
                     
                     <div className="flex-1 p-8">
                         <div className="max-w-4xl mx-auto">

@@ -23,7 +23,7 @@ import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { common, createLowlight } from 'lowlight'
 import { useEffect, useRef, useState } from 'react'
-
+import { Extension } from '@tiptap/core'
 import { EditorStatsBar } from './EditorStatsBar'
 import { EditorMenuBar } from './EditorMenuBar'
 import CodeBlockComponent from './CodeBlockComponent'
@@ -37,6 +37,22 @@ export interface TiptapEditorProps {
     onChange: (html: string) => void
 }
 
+const TabExtension = Extension.create({
+    name: 'tabExtension',
+    addKeyboardShortcuts() {
+        return {
+            Tab: () => {
+                // Return false to allow default indentation behavior inside lists
+                if (this.editor.isActive('listItem')) {
+                    return false;
+                }
+                // Insert 4 spaces and stop event propagation
+                return this.editor.commands.insertContent('    ');
+            },
+        };
+    },
+});
+
 const lowlight = createLowlight(common)
 
 export default function TiptapEditorInner({ content, onChange }: TiptapEditorProps) {
@@ -47,6 +63,8 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
+            TabExtension, // Inject here
+        StarterKit.configure({ codeBlock: false }),
             StarterKit.configure({ codeBlock: false }),
             TextStyle,
             Color,
@@ -90,6 +108,25 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
             },
         },
     })
+
+    const handleTextareaTab = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const target = e.target as HTMLTextAreaElement;
+        const start = target.selectionStart;
+        const end = target.selectionEnd;
+        const value = target.value;
+        const updated = value.substring(0, start) + "    " + value.substring(end);
+        
+        setSourceHtml(updated);
+        editor?.commands.setContent(updated);
+        onChange(updated);
+        
+        requestAnimationFrame(() => {
+            target.selectionStart = target.selectionEnd = start + 4;
+        });
+    }
+};
 
     // Delay hydration lock until content is truthy to resolve race conditions
     useEffect(() => {
@@ -139,7 +176,7 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
     }
 
     return (
-        <div className="flex flex-col w-full min-h-[500px] border rounded-xl bg-background shadow-sm overflow-hidden">
+        <div className="flex flex-col w-full min-h-[500px] border rounded-xl bg-background shadow-sm">
             <EditorStatsBar editor={editor} />
 
             <div className="flex justify-between items-center border-b px-4 py-2 bg-muted/30">
@@ -192,6 +229,7 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
                         id="html-source-textarea"
                         value={sourceHtml}
                         onChange={handleSourceChange}
+                        onKeyDown={handleTextareaTab}
                         className="absolute inset-0 w-full h-full p-6 bg-zinc-950 text-zinc-50 font-mono text-sm leading-relaxed resize-none focus:outline-none"
                         placeholder=""
                         spellCheck={false}
