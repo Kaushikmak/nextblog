@@ -48,9 +48,9 @@ export const metadata: Metadata = {
     },
   },
 
-  // verification: {
-  //   google: "your-google-verification-code",
-  // },
+  verification: {
+    google: "OmzJnIQ1e1Pe6kyp3S7DL8AuEn0DuVUX80OCScnJ7io",
+  },
   
   category: "technology",
 };

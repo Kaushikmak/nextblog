@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PostIdRouteProps): Promise<Me
     if (!post) {
         return { 
             title: "Post Not Found", 
-            description: "The requested technical discourse is unavailable." 
+            description: "The requested technical discourse is unavailable.",
         };
     }
 
