@@ -30,15 +30,15 @@ export async function generateMetadata({ params }: PostIdRouteProps): Promise<Me
     }
 
     const plainDescription = post.body.replace(/<[^>]*>/g, '').slice(0, 160).trim();
-    const siteTitle = "MutexBlog";
-    const postImage = post.imageURL || "/og-image.png";
+    
+    // Modification: Prioritize headerImageUrl, fallback to imageURL, then default image
+    const postImage = post.headerImageUrl || post.imageURL || "/og-image.png";
 
-    // Combine all authors for the metadata tags
     const allAuthorNames = [post.authorName ?? "Anonymous", ...(post.resolvedCoAuthors?.map((a: any) => a.name) || [])];
 
     return {
         title: post.title, 
-        description: post.summary || plainDescription, // Use summary for SEO if it exists 
+        description: post.summary || plainDescription,
         openGraph: {
             title: post.title,
             description: post.summary || plainDescription,
@@ -100,7 +100,8 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
             <div className="relative w-full h-72 mb-8 rounded-xl overflow-hidden shadow-sm border">
                 <Image
                     fill
-                    src={post.imageURL ?? "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop"}
+                    // Modification: Apply the same prioritization logic to the render tree
+                    src={post.headerImageUrl ?? post.imageURL ?? "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop"}
                     className="object-cover hover:scale-105 transition-transform duration-500"
                     alt={post.title}
                 />
