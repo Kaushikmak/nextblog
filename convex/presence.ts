@@ -16,20 +16,15 @@ export const heartbeat = mutation({
     interval: v.number(),
   },
   handler: async (ctx, { roomId, userId, sessionId, interval }) => {
-    // 1. Identify if this is a guest user (anon_ prefix)
     const isAnonymous = userId.startsWith("anon_");
 
-    // 2. Auth check: Only enforce if the ID is NOT an anonymous one
     if (!isAnonymous) {
       const user = await authComponent.safeGetAuthUser(ctx);
-
-      // Prevent users from spoofing other authenticated IDs
       if (!user || user._id !== userId) {
         throw new ConvexError("Unauthorized");
       }
     }
 
-    // 3. Heartbeat allowed for both valid members and identified guests
     return await presence.heartbeat(ctx, roomId, userId, sessionId, interval);
   },
 });
@@ -41,23 +36,22 @@ export const list = query({
     
     return await Promise.all(
         entries.map(async (item) => {
-            // 4. FIX: Skip DB lookup if the ID is anonymous (prevents Server Error)
-            const isAnonymous = item.userId.startsWith("anon_");
+            // FIX: Reverted to 'userId' as per your TypeScript error
+            const id = item.userId; 
+            const isAnonymous = id.startsWith("anon_");
             
             if (isAnonymous) {
-                return { ...item, name: "Guest" }; // Optionally assign a display name
+                return { ...item, name: "Guest" };
             }
 
-            // 5. Normal lookup for registered users
-            const user = await authComponent.getAnyUserById(ctx, item.userId);
-            if (!user) {
-                return item;
-            }
+            const user = await authComponent.getAnyUserById(ctx, id);
+            if (!user) return item;
+
             return {
                 ...item,
                 name: user.name,
-                picture: user.image // Added for FacePile compatibility
-            }
+                picture: user.image 
+            };
         })
     );
   },
