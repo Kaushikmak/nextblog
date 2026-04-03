@@ -44,7 +44,7 @@ export function AuthorProfileClient({ authorId }: AuthorProfileClientProps) {
                 <div className="flex-1 text-center md:text-left space-y-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight">{fallbackName}</h1>
+                            <h1 className="text-3xl font-bold tracking-tight">{profile?.name || fallbackName}</h1>
                             <p className="text-muted-foreground font-medium mt-1">
                                 {followerCount} Follower{followerCount !== 1 ? 's' : ''}
                             </p>

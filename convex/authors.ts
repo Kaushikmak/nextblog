@@ -16,12 +16,12 @@ export const getAuthorsList = query({
                 const authorName = post.authorName ?? "Anonymous Author";
                 const existingProfile = profileMap.get(post.authorId);
                 
-                // FIX: Generate a consistent fallback handle if they haven't set one up via dashboard
                 const fallbackHandle = authorName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + post.authorId.slice(-4);
                 
                 authorMap.set(post.authorId, {
                     authorId: post.authorId,
-                    name: authorName,
+                    // FIX: Prioritize explicit profile name over post authorName
+                    name: existingProfile?.name || authorName, 
                     handle: existingProfile?.handle || fallbackHandle,
                     postCount: 1,
                 });
@@ -38,29 +38,60 @@ export const searchAuthorsForDropdown = query({
     handler: async (ctx, args) => {
         if (!args.searchTerm || args.searchTerm.trim() === "") return [];
         
-        // FIX: Strip the '@' symbol if the user types it in the search bar
         const term = args.searchTerm.toLowerCase().trim().replace(/^@/, '');
+        const results = new Map();
+
+        // 1. Search existing profiles
         const allProfiles = await ctx.db.query("profiles").collect();
-        
-        return allProfiles
-            .filter(p => 
-                (p.handle && p.handle.toLowerCase().includes(term)) || 
-                (p.name && p.name.toLowerCase().includes(term))
-            )
-            .map(p => ({ id: p.userId, name: p.name || "Author", handle: p.handle || "unknown" }))
-            .slice(0, 5);
+        for (const p of allProfiles) {
+            if ((p.handle && p.handle.toLowerCase().includes(term)) || 
+                (p.name && p.name.toLowerCase().includes(term))) {
+                results.set(p.userId, { 
+                    id: p.userId, 
+                    name: p.name || "Author", 
+                    handle: p.handle || "unknown" 
+                });
+            }
+        }
+
+        // 2. Search posts for authors who haven't set up a profile yet
+        if (results.size < 5) {
+            const allPosts = await ctx.db.query("posts").collect();
+            for (const post of allPosts) {
+                if (!results.has(post.authorId) && post.authorName && post.authorName.toLowerCase().includes(term)) {
+                    const fallbackHandle = post.authorName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + post.authorId.slice(-4);
+                    results.set(post.authorId, {
+                        id: post.authorId,
+                        name: post.authorName,
+                        handle: fallbackHandle
+                    });
+                }
+            }
+        }
+
+        return Array.from(results.values()).slice(0, 5);
     }
 });
 
 export const getAuthorsByIds = query({
     args: { userIds: v.array(v.string()) },
     handler: async (ctx, args) => {
-        const profiles = await Promise.all(
-            args.userIds.map(id => ctx.db.query("profiles").withIndex("by_userId", q => q.eq("userId", id)).unique())
-        );
-        return profiles
-            .filter(p => p !== null)
-            .map(p => ({ id: p!.userId, name: p!.name || "Author", handle: p!.handle }));
+        const results = [];
+        for (const id of args.userIds) {
+            const profile = await ctx.db.query("profiles").withIndex("by_userId", q => q.eq("userId", id)).unique();
+            if (profile) {
+                results.push({ id: profile.userId, name: profile.name || "Author", handle: profile.handle || "unknown" });
+            } else {
+                // Fallback: look for a post by this user to grab their name
+                const post = await ctx.db.query("posts").withIndex("by_author", q => q.eq("authorId", id)).first();
+                results.push({
+                    id: id,
+                    name: post?.authorName || "Anonymous Author",
+                    handle: "author-" + id.slice(-4)
+                });
+            }
+        }
+        return results;
     }
 });
 
@@ -87,11 +118,19 @@ export const getAuthorProfile = query({
             .withIndex("by_following", (q) => q.eq("followingId", args.authorId))
             .collect();
 
+        // FIX: Compute a robust fallback name
+        let fallbackName = "Anonymous Author";
+        if (profile?.name) {
+            fallbackName = profile.name;
+        } else if (posts.length > 0 && posts[0].authorName) {
+            fallbackName = posts[0].authorName;
+        }
+
         return { 
             profile, 
             posts: resolvedPosts, 
             followerCount: followers.length,
-            fallbackName: posts.length > 0 ? posts[0].authorName : "Anonymous"
+            fallbackName
         };
     }
 });
