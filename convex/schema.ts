@@ -60,7 +60,29 @@ export default defineSchema({
   userId: v.string(),
   lastSeen: v.number(),
   active: v.boolean(),
-})
-  .index("by_room", ["roomId", "active"])
+}).index("by_room", ["roomId", "active"])
   .index("by_session", ["sessionId"]),
+
+    proposals: defineTable({
+        postId: v.id("posts"),
+        coAuthorId: v.string(),
+        coAuthorName: v.string(),
+        proposedTitle: v.string(),
+        proposedBody: v.string(),
+        proposedSummary: v.optional(v.string()),
+        status: v.union(v.literal("pending"), v.literal("merged"), v.literal("rejected")),
+        createdAt: v.number(),
+    })
+    .index("by_post", ["postId"])
+    .index("by_coauthor", ["coAuthorId"])
+    .index("by_post_and_status", ["postId", "status"]),
+
+    postAuthors: defineTable({
+        postId: v.id("posts"),
+        userId: v.string(),
+        isMainAuthor: v.boolean(),
+    })
+    .index("by_user", ["userId"])
+    .index("by_post", ["postId"])
+    .index("by_post_and_user", ["postId", "userId"]),
 });

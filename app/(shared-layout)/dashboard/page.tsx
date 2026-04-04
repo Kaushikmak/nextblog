@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Eye, Heart, FileText, Loader2, Save, User, Trash2, Edit, Copy } from "lucide-react";
+import { DiffViewer } from "@/components/web/DiffViewer";
+import { Eye, Heart, FileText, Loader2, Save, User, Trash2, Edit, Copy, Check, X } from "lucide-react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { PostContent } from "@/components/web/Postcontent"; // NEW: Required for rendering HTML safely
 
 export default function DashboardPage() {
     // Queries & Session
@@ -33,25 +35,30 @@ export default function DashboardPage() {
     const deletePostMutation = useMutation(api.posts.deletePost);
     const [postToDelete, setPostToDelete] = useState<Id<"posts"> | null>(null);
     
+    // Proposal Review States & Mutations
+    const [reviewingProposal, setReviewingProposal] = useState<any | null>(null);
+    const myPendingReviews = useQuery(api.proposals.getMyPendingReviews);
+    const mergeProposalMutation = useMutation(api.proposals.mergeProposal);
+    const rejectProposalMutation = useMutation(api.proposals.rejectProposal);
+    
     const { data: session, isPending: sessionLoading } = authClient.useSession();
 
     // Local State for Forms
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState({
-    name: "",
-    handle: "",
-    phone: "",
-    bio: "",
-    website: "",
-    location: "",
-});
+        name: "",
+        handle: "",
+        phone: "",
+        bio: "",
+        website: "",
+        location: "",
+    });
 
     // Hydrate form when data arrives
     useEffect(() => {
-    if (session && myProfile !== undefined) {
+        if (session && myProfile !== undefined) {
             let currentHandle = myProfile?.handle;
 
-            // Auto-generate cute handle fallback
             if (!currentHandle && session?.user?.name) {
                 const cleanName = session.user.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
                 const randomNum = Math.floor(Math.random() * 1000);
@@ -69,7 +76,7 @@ export default function DashboardPage() {
         }
     }, [session, myProfile]);
 
-    if (myPosts === undefined || sessionLoading || myProfile === undefined) {
+    if (myPosts === undefined || sessionLoading || myProfile === undefined || myPendingReviews === undefined) {
         return <div className="flex justify-center items-center h-[50vh]"><Loader2 className="size-8 animate-spin text-muted-foreground" /></div>;
     }
 
@@ -84,14 +91,14 @@ export default function DashboardPage() {
             }
 
             await upsertProfile({
-            name: formData.name,
-            handle: formData.handle.toLowerCase().trim(),
-            phone: formData.phone.trim() || undefined,
-            bio: formData.bio.trim() || undefined,
-            website: formData.website.trim() || undefined,
-            location: formData.location.trim() || undefined,
-        });
-        toast.success("Profile updated successfully!");
+                name: formData.name,
+                handle: formData.handle.toLowerCase().trim(),
+                phone: formData.phone.trim() || undefined,
+                bio: formData.bio.trim() || undefined,
+                website: formData.website.trim() || undefined,
+                location: formData.location.trim() || undefined,
+            });
+            toast.success("Profile updated successfully!");
         } catch (error) {
             toast.error("Failed to update profile.");
             console.error(error);
@@ -100,7 +107,6 @@ export default function DashboardPage() {
         }
     };
 
-    // Modal Confirmation Execution
     const confirmDelete = async () => {
         if (!postToDelete) return;
         try {
@@ -130,13 +136,22 @@ export default function DashboardPage() {
                     </Button>
                 </div>
             </div>
-            <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
+            <Tabs defaultValue="overview" className="w-full mt-8">
+                <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-8">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="reviews">
+                        Pending Reviews
+                        {myPendingReviews && myPendingReviews.length > 0 && (
+                            <span className="ml-2 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                {myPendingReviews.length}
+                            </span>
+                        )}
+                    </TabsTrigger>
                     <TabsTrigger value="settings">Profile Settings</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview">
+                    {/* Metrics Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -182,12 +197,9 @@ export default function DashboardPage() {
                                     <tbody className="divide-y">
                                         {myPosts.map((post) => (
                                             <tr key={post._id} className="hover:bg-muted/20 transition-colors">
-                                                {/* Modified Title Column to include Role Badge */}
                                                 <td className="px-6 py-4 font-medium text-foreground truncate max-w-[200px] sm:max-w-[400px]">
                                                     <div className="flex flex-col gap-1.5">
                                                         <span className="truncate">{post.title}</span>
-                                                        
-                                                        {/* Visual Role Segregation */}
                                                         {(post as any).isMainAuthor ? (
                                                             <span className="w-max px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-primary/10 text-primary border border-primary/20">
                                                                 Author
@@ -199,7 +211,6 @@ export default function DashboardPage() {
                                                         )}
                                                     </div>
                                                 </td>
-                                                
                                                 <td className="px-6 py-4 text-right">{post.views ?? 0}</td>
                                                 <td className="px-6 py-4 text-right">{post.likes ?? 0}</td>
                                                 <td className="px-6 py-4 flex items-center justify-end gap-2">
@@ -218,7 +229,6 @@ export default function DashboardPage() {
                                                         size="icon" 
                                                         title="Delete Post" 
                                                         onClick={() => setPostToDelete(post._id)}
-                                                        // Optional: Disable delete button if user is only a co-author
                                                         disabled={!(post as any).isMainAuthor}
                                                     >
                                                         <Trash2 className="size-4" />
@@ -233,7 +243,51 @@ export default function DashboardPage() {
                     )}
                 </TabsContent>
 
+                <TabsContent value="reviews">
+                    <h2 className="text-xl font-bold mb-4">Incoming Co-Author Proposals</h2>
+                    
+                    {myPendingReviews.length === 0 ? (
+                        <div className="text-center py-12 border rounded-xl bg-muted/10 border-dashed">
+                            <p className="text-muted-foreground">You have no pending edit proposals.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {myPendingReviews.map((proposal) => (
+                                <Card key={proposal._id} className="w-full">
+                                    <CardHeader className="pb-2">
+                                        <div className="flex justify-between items-start gap-4">
+                                            <div>
+                                                <CardTitle className="text-lg">Proposed Edits: {proposal.proposedTitle}</CardTitle>
+                                                <CardDescription className="mt-1">
+                                                    Target Post: <span className="font-medium text-foreground">{proposal.originalPostTitle}</span>
+                                                </CardDescription>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                {/* NEW: Replaced blind merge buttons with Review Changes trigger */}
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="secondary"
+                                                    onClick={() => setReviewingProposal(proposal)}
+                                                >
+                                                    <Eye className="size-4 mr-1" /> Review Changes
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-md flex justify-between items-center border">
+                                            <span>Submitted by: <strong className="text-foreground">{proposal.coAuthorName}</strong></span>
+                                            <span>{new Date(proposal.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </TabsContent>
+
                 <TabsContent value="settings">
+                    {/* Settings Form Content remains identical */}
                     <Card className="max-w-2xl">
                         <CardHeader>
                             <CardTitle>Personal Information</CardTitle>
@@ -308,7 +362,7 @@ export default function DashboardPage() {
                 </TabsContent>
             </Tabs>
 
-            {/* Custom Theme Confirmation Dialog */}
+            {/* Custom Theme Confirmation Dialog for Post Deletion */}
             <Dialog open={!!postToDelete} onOpenChange={(open) => !open && setPostToDelete(null)}>
                 <DialogContent>
                     <DialogHeader>
@@ -320,6 +374,102 @@ export default function DashboardPage() {
                     <DialogFooter className="gap-2 sm:gap-0 mt-4">
                         <Button variant="outline" onClick={() => setPostToDelete(null)}>Cancel</Button>
                         <Button variant="destructive" onClick={confirmDelete}>Delete Permanently</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* NEW: Proposal Diff Review Dialog */}
+            <Dialog open={!!reviewingProposal} onOpenChange={(open) => !open && setReviewingProposal(null)}>
+                <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Review Proposed Edits</DialogTitle>
+                        <DialogDescription>
+                            Compare the current version with the proposed changes from {reviewingProposal?.coAuthorName}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {/* Unified Git-Like Diff Container */}
+                    <div className="flex-1 overflow-hidden min-h-0 py-4 flex flex-col">
+                        <div className="border rounded-md overflow-hidden bg-background flex flex-col h-full">
+                            <div className="bg-muted px-4 py-2 border-b flex justify-between items-center text-sm font-semibold">
+                                <span>Visual Difference</span>
+                                <div className="flex gap-4 text-xs font-normal">
+                                    <span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500/20 border border-red-500 rounded-sm"></div> Deletions</span>
+                                    <span className="flex items-center gap-1"><div className="w-3 h-3 bg-green-500/20 border border-green-500 rounded-sm"></div> Additions</span>
+                                </div>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                {/* Title Diff */}
+                                <div>
+                                    <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Title</h3>
+                                    <div className="font-medium text-lg border p-3 rounded-md bg-muted/10">
+                                        <DiffViewer 
+                                            originalHtml={reviewingProposal?.originalPostTitle || ""} 
+                                            proposedHtml={reviewingProposal?.proposedTitle || ""} 
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Summary Diff (If applicable) */}
+                                <div>
+                                    <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Summary</h3>
+                                    <div className="text-sm italic border p-3 rounded-md bg-muted/10">
+                                        <DiffViewer 
+                                            originalHtml={reviewingProposal?.originalPostSummary || ""} 
+                                            proposedHtml={reviewingProposal?.proposedSummary || ""} 
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Body Diff */}
+                                <div className="flex-1">
+                                    <h3 className="text-xs font-bold uppercase text-muted-foreground mb-2">Body Content</h3>
+                                    <div className="border p-4 rounded-md bg-muted/5">
+                                        <DiffViewer 
+                                            originalHtml={reviewingProposal?.originalPostBody || ""} 
+                                            proposedHtml={reviewingProposal?.proposedBody || ""} 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="gap-2 sm:gap-0 border-t pt-4">
+                        <Button variant="outline" onClick={() => setReviewingProposal(null)}>
+                            Cancel
+                        </Button>
+                        <div className="flex gap-2">
+                            <Button 
+                                variant="destructive" 
+                                onClick={async () => {
+                                    try {
+                                        await rejectProposalMutation({ proposalId: reviewingProposal._id });
+                                        toast.success("Proposal rejected.");
+                                        setReviewingProposal(null);
+                                    } catch (e) {
+                                        toast.error("Failed to reject proposal.");
+                                    }
+                                }}
+                            >
+                                <X className="size-4 mr-2" /> Reject
+                            </Button>
+                            <Button 
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={async () => {
+                                    try {
+                                        await mergeProposalMutation({ proposalId: reviewingProposal._id });
+                                        toast.success("Proposal merged successfully!");
+                                        setReviewingProposal(null);
+                                    } catch (e) {
+                                        toast.error("Failed to merge proposal.");
+                                    }
+                                }}
+                            >
+                                <Check className="size-4 mr-2" /> Accept & Merge
+                            </Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

@@ -19,9 +19,15 @@ import Link from "next/link";
 import { Navbar } from "@/components/web/navbar";
 import { useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 // Isolate the main logic that uses useSearchParams
 function CreatePostEditor() {
+    const currentUserId = useQuery(api.presence.getUserId);
+
+    
+
     const searchParams = useSearchParams();
     const editIdParam = searchParams.get("editId");
     const editIdToFetch = editIdParam as Id<"posts"> | null;
@@ -29,6 +35,7 @@ function CreatePostEditor() {
     // Fetch existing post if editId is provided
     const existingPost = useQuery(api.posts.getPostById, editIdToFetch ? { postId: editIdToFetch } : "skip");
 
+    
     const [isPending, setIsPending] = useState(false);
     const [title, setTitle] = useState("");
     const [summary, setSummary] = useState("");
@@ -39,6 +46,9 @@ function CreatePostEditor() {
     const [isPrivate, setIsPrivate] = useState(false); 
     const [coAuthorsStr, setCoAuthorsStr] = useState(""); 
     const [existingPostId, setExistingPostId] = useState<Id<"posts"> | null>(null);
+
+    const isOriginalAuthor = existingPost?.authorId === currentUserId;
+    const isCoAuthorRole = existingPost?.coAuthors?.includes(currentUserId || "") ?? false;
 
     const [coAuthors, setCoAuthors] = useState<Array<{id: string, name: string}>>([]);
     const [coAuthorSearchInput, setCoAuthorSearchInput] = useState("");
@@ -54,8 +64,27 @@ function CreatePostEditor() {
     const createPost = useMutation(api.posts.createPost);
     const updatePostMutation = useMutation(api.posts.updatePost);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const createProposalMutation = useMutation(api.proposals.createProposal);
 
     const DRAFT_KEY = "blog_editor_draft";
+
+    const isReadOnlyMeta = !!existingPostId && !isOriginalAuthor && isCoAuthorRole;
+
+    const router = useRouter();
+
+    useEffect(() => {
+        // If the post is loaded, and the user is neither author nor co-author, kick them out.
+        if (existingPost && currentUserId) {
+            const isAuthor = existingPost.authorId === currentUserId;
+            const isCoAuth = existingPost.coAuthors?.includes(currentUserId) ?? false;
+            
+            if (!isAuthor && !isCoAuth) {
+                toast.error("You do not have permission to edit this post.");
+                router.push("/blog");
+            }
+        }
+    }, [existingPost, currentUserId, router]);
+
 
     useEffect(() => {
         if (existingCoAuthorsData && existingCoAuthorsData.length > 0 && coAuthors.length === 0) {
@@ -163,8 +192,21 @@ function CreatePostEditor() {
             };
 
             if (existingPostId) {
-                await updatePostMutation({ id: existingPostId, ...postArgs });
-                toast.success("Blog updated successfully!");
+                if (!isOriginalAuthor && isCoAuthorRole) {
+                    await createProposalMutation({
+                        postId: existingPostId,
+                        proposedTitle: title,
+                        proposedBody: content,
+                        proposedSummary: summary.trim() || undefined,
+                    });
+                    toast.success("Draft proposed successfully! Awaiting author review.");
+                    
+                    router.push("/dashboard"); 
+                } else {
+                    // Main Branch: Original Author updates the post directly
+                    await updatePostMutation({ id: existingPostId, ...postArgs });
+                    toast.success("Blog updated successfully!");
+                }
             } else {
                 await createPost(postArgs);
                 localStorage.removeItem(DRAFT_KEY);
@@ -223,7 +265,10 @@ function CreatePostEditor() {
                     </Button>
                     <Button onClick={onSubmit} disabled={isPending} size="sm">
                         {isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-                        {existingPostId ? "Update Post" : "Publish Post"}
+                        {existingPostId 
+                            ? (!isOriginalAuthor && isCoAuthorRole ? "Propose Edit" : "Update Post") 
+                            : "Publish Post"
+                        }
                     </Button>
                 </div>
             </div>
@@ -234,6 +279,7 @@ function CreatePostEditor() {
                         <Label htmlFor="title" className="text-sm font-semibold">Post Title</Label>
                         <Input
                             id="title"
+            
                             className="font-medium bg-muted/50"
                             placeholder="Enter a catchy title..."
                             value={title}
@@ -252,7 +298,8 @@ function CreatePostEditor() {
                         />
                     </div>
                     
-                    <div className="space-y-2">
+                    {!isReadOnlyMeta && (
+                        <div className="space-y-2">
                         <Label className="text-sm font-semibold">Header Image</Label>
                         <Tabs value={activeMediaTab} onValueChange={setActiveMediaTab} className="w-full">
                             <TabsList className="grid w-full grid-cols-2 mb-2 h-9">
@@ -288,6 +335,8 @@ function CreatePostEditor() {
                             </TabsContent>
                         </Tabs>
                     </div>
+
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full pt-4 border-t">
