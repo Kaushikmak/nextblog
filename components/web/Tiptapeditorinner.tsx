@@ -64,6 +64,8 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
     const [sourceHtml, setSourceHtml] = useState('')
     const initialised = useRef(false)
 
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
@@ -101,9 +103,19 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
         ],
         content: '',
         onUpdate: ({ editor }) => {
-            // Lock initialization if the user types manually before any async load
             initialised.current = true;
-            if (!isSourceMode) onChange(editor.getHTML())
+            if (!isSourceMode) {
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                timeoutRef.current = setTimeout(() => {
+                    onChange(editor.getHTML());
+                }, 400); 
+            }
+        },
+        onBlur: ({ editor }) => {
+            if (!isSourceMode) {
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                onChange(editor.getHTML());
+            }
         },
         editorProps: {
             attributes: {

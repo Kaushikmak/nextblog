@@ -21,6 +21,7 @@ import { useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { useDeferredValue } from "react";
 
 // Isolate the main logic that uses useSearchParams
 function CreatePostEditor() {
@@ -39,7 +40,9 @@ function CreatePostEditor() {
     const [isPending, setIsPending] = useState(false);
     const [title, setTitle] = useState("");
     const [summary, setSummary] = useState("");
+
     const [content, setContent] = useState("");
+    const deferredContent = useDeferredValue(content);
     const [copied, setCopied] = useState(false);
     
     // States for Features 1, 2, and 5
@@ -447,8 +450,8 @@ function CreatePostEditor() {
                             )}
                             
                             <div className="prose dark:prose-invert max-w-none mt-8 break-words">
-                                {content
-                                    ? <PostContent html={content} />
+                                {deferredContent
+                                    ? <PostContent html={deferredContent} />
                                     : <p className="text-muted-foreground italic">Start typing to see the magic happen...</p>
                                 }
                             </div>
