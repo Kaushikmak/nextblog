@@ -221,17 +221,16 @@ export const getMyPosts = query({
     handler: async (ctx) => {
         const user = await authComponent.safeGetAuthUser(ctx);
         if (!user) return [];
-        
-        const posts = await ctx.db
-            .query("posts")
-            .withIndex("by_author", (q) => q.eq("authorId", user._id))
-            .order("desc")
-            .collect();
 
-        return Promise.all(posts.map(async (post) => {
+        const allPosts = await ctx.db.query("posts").order("desc").collect();
+        const userPosts = allPosts.filter((post) => 
+            post.authorId === user._id || 
+            (post.coAuthors && post.coAuthors.includes(user._id))
+        );
+
+        return Promise.all(userPosts.map(async (post) => {
             const resolvedImageURL = post.imageStorageId !== undefined ? await ctx.storage.getUrl(post.imageStorageId) : null;
             
-            // NEW: Resolve co-author profiles
             let resolvedCoAuthors: Array<{ id: string, name: string }> = [];
             if (post.coAuthors && post.coAuthors.length > 0) {
                 const profiles = await Promise.all(
@@ -245,7 +244,8 @@ export const getMyPosts = query({
             return { 
                 ...post, 
                 imageURL: resolvedImageURL, 
-                resolvedCoAuthors // Included for the frontend 
+                resolvedCoAuthors,
+                isMainAuthor: post.authorId === user._id 
             };
         }));
     }

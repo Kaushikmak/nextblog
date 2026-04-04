@@ -182,9 +182,24 @@ export default function DashboardPage() {
                                     <tbody className="divide-y">
                                         {myPosts.map((post) => (
                                             <tr key={post._id} className="hover:bg-muted/20 transition-colors">
+                                                {/* Modified Title Column to include Role Badge */}
                                                 <td className="px-6 py-4 font-medium text-foreground truncate max-w-[200px] sm:max-w-[400px]">
-                                                    {post.title}
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <span className="truncate">{post.title}</span>
+                                                        
+                                                        {/* Visual Role Segregation */}
+                                                        {(post as any).isMainAuthor ? (
+                                                            <span className="w-max px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-primary/10 text-primary border border-primary/20">
+                                                                Author
+                                                            </span>
+                                                        ) : (
+                                                            <span className="w-max px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider bg-muted text-muted-foreground border">
+                                                                Co-Author
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
+                                                
                                                 <td className="px-6 py-4 text-right">{post.views ?? 0}</td>
                                                 <td className="px-6 py-4 text-right">{post.likes ?? 0}</td>
                                                 <td className="px-6 py-4 flex items-center justify-end gap-2">
@@ -203,6 +218,8 @@ export default function DashboardPage() {
                                                         size="icon" 
                                                         title="Delete Post" 
                                                         onClick={() => setPostToDelete(post._id)}
+                                                        // Optional: Disable delete button if user is only a co-author
+                                                        disabled={!(post as any).isMainAuthor}
                                                     >
                                                         <Trash2 className="size-4" />
                                                     </Button>

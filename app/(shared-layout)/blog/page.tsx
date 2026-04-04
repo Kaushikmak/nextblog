@@ -25,16 +25,6 @@ export default async function BlogIndexPage() {
                     const fallbackImage = "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop";
                     const displayImage = post.imageURL || post.headerImageUrl || fallbackImage;
 
-                    // NEW: Combine and format all authors into a readable text string
-                    const allAuthorNames = [
-                        post.authorName ?? "Anonymous",
-                        ...(post.resolvedCoAuthors?.map((a: any) => a.name) || [])
-                    ];
-                    
-                    let displayAuthors = allAuthorNames[0];
-                    if (allAuthorNames.length > 1) {
-                        displayAuthors = allAuthorNames.slice(0, -1).join(", ") + " & " + allAuthorNames[allAuthorNames.length - 1];
-                    }
 
                     return (
                         <Link href={`/blog/${post._id}`} key={post._id}>
@@ -55,10 +45,17 @@ export default async function BlogIndexPage() {
                                         {plainTextSummary}
                                     </p>
                                     <div className="flex justify-between items-center text-xs text-muted-foreground font-medium">
-                                        {/* Truncate ensures the layout doesn't break if there are 10 co-authors */}
-                                        <span className="truncate max-w-[70%]" title={displayAuthors}>
-                                            By {displayAuthors}
-                                        </span>
+                                        {/* Segregated Author Display */}
+                                        <div className="flex flex-wrap gap-1 items-center truncate max-w-[70%]">
+                                            <span className="font-semibold text-primary">
+                                                Author: {post.authorName ?? "Anonymous"}
+                                            </span>
+                                            {post.resolvedCoAuthors && post.resolvedCoAuthors.length > 0 && (
+                                                <span className="truncate">
+                                                    {" | "}Co-author(s): {post.resolvedCoAuthors.map((a: any) => a.name).join(", ")}
+                                                </span>
+                                            )}
+                                        </div>
                                         <span className="shrink-0">{new Date(post._creationTime).toLocaleDateString()}</span>
                                     </div>
                                 </CardContent>

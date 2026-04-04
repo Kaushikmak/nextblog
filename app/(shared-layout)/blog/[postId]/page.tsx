@@ -83,11 +83,6 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
         );
     }
 
-    // Combine primary author and co-authors into one array for rendering
-    const allAuthors = [
-        { id: post.authorId, name: post.authorName ?? "Anonymous" },
-        ...(post.resolvedCoAuthors || [])
-    ];
 
     return (
         <div className="max-w-4xl mx-auto py-8 px-4 animate-in fade-in duration-500">
@@ -121,34 +116,46 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
                 </div>
                 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-4">
-                            <p className="text-sm font-semibold text-foreground flex flex-wrap gap-1 items-center">
-                                By {allAuthors.map((author, index) => (
-                                    <span key={author.id}>
-                                        <Link href={`/authors/${author.id}`} className="hover:underline hover:text-primary transition-colors">
-                                            {author.name}
-                                        </Link>
-                                        {/* Dynamic Grammar: comma for list, '&' for last item */}
-                                        {index < allAuthors.length - 1 ? (index === allAuthors.length - 2 ? " & " : ", ") : ""}
-                                    </span>
-                                ))}
-                            </p>
+                        <div className="space-y-3">
+                            <div className="flex flex-wrap items-center gap-4">
+                                
+                                {/* Segregated Author Display with Links */}
+                                <div className="text-sm text-foreground flex flex-wrap gap-2 items-center">
+                                    <span className="font-semibold">Author:</span>
+                                    <Link href={`/authors/${post.authorId}`} className="hover:underline hover:text-primary transition-colors">
+                                        {post.authorName ?? "Anonymous"}
+                                    </Link>
+
+                                    {post.resolvedCoAuthors && post.resolvedCoAuthors.length > 0 && (
+                                        <>
+                                            <span className="text-muted-foreground">|</span>
+                                            <span className="font-semibold">Co-author(s):</span>
+                                            {post.resolvedCoAuthors.map((author: any, index: number) => (
+                                                <span key={author.id}>
+                                                    <Link href={`/authors/${author.id}`} className="hover:underline hover:text-primary transition-colors">
+                                                        {author.name}
+                                                    </Link>
+                                                    {index < post.resolvedCoAuthors!.length - 1 ? ", " : ""}
+                                                </span>
+                                            ))}
+                                        </>
+                                    )}
+                                </div>
+                                
+                                <PostPresence roomId={post._id} userID={userID} />
+                            </div>
                             
-                            <PostPresence roomId={post._id} userID={userID} />
+                            <p className="text-xs text-muted-foreground">
+                                Posted on {new Date(post._creationTime).toLocaleDateString()}
+                            </p>
                         </div>
                         
-                        <p className="text-xs text-muted-foreground">
-                            Posted on {new Date(post._creationTime).toLocaleDateString()}
-                        </p>
+                        <PostInteractions 
+                            postId={post._id} 
+                            initialViews={post.views ?? 0} 
+                            initialLikes={post.likes ?? 0} 
+                        />
                     </div>
-                    
-                    <PostInteractions 
-                        postId={post._id} 
-                        initialViews={post.views ?? 0} 
-                        initialLikes={post.likes ?? 0} 
-                    />
-                </div>
             </div>
 
             <Separator className="my-8" />
