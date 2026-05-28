@@ -245,12 +245,12 @@ function CreatePostEditor() {
     };
 
     return (
-        <div className="w-full min-h-screen flex flex-col bg-background">
-            <div className="shrink-0">
+        <div className="w-full h-screen flex flex-col bg-background overflow-hidden">
+            <div className="shrink-0 z-50 relative">
                 <Navbar />
             </div>
 
-            <div className="flex justify-between items-center p-4 border-b shrink-0 bg-muted/20">
+            <div className="flex justify-between items-center p-4 border-b shrink-0 bg-muted/20 z-40 relative">
                 <div className="flex items-center gap-4">
                     <Link href="/blog">
                         <Button variant="ghost" size="icon"><ArrowLeft className="size-4" /></Button>
@@ -276,7 +276,7 @@ function CreatePostEditor() {
                 </div>
             </div>
 
-            <div className="shrink-0 border-b bg-background p-4 shadow-sm z-10">
+            <div className="shrink-0 border-b bg-background p-4 shadow-sm z-30 relative">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-4">
                     <div className="space-y-2">
                         <Label htmlFor="title" className="text-sm font-semibold">Post Title</Label>
@@ -410,25 +410,25 @@ function CreatePostEditor() {
                 </div>
             </div>
 
-            <ResizablePanelGroup orientation="horizontal" className="flex-1 !overflow-visible">
-                <ResizablePanel defaultSize={50} minSize={30} className="flex flex-col bg-background !overflow-visible border-r">
+            <ResizablePanelGroup orientation="horizontal" className="flex-1 overflow-hidden border-t">
+                <ResizablePanel defaultSize={50} minSize={30} className="flex flex-col bg-background border-r">
                     <div className="bg-muted/30 border-b px-4 py-2 shrink-0">
-    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Editor</span>
-</div>
-                    <div className="flex-1 p-4">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Editor</span>
+                    </div>
+                    <div className="flex-1 p-0 overflow-hidden">
                         <TiptapEditor content={content} onChange={setContent} />
                     </div>
                 </ResizablePanel>
 
                 <ResizableHandle withHandle />
 
-                <ResizablePanel defaultSize={50} minSize={30} className="bg-[#f8f9fa] dark:bg-zinc-950 flex flex-col !overflow-visible hidden md:flex">
+                <ResizablePanel defaultSize={50} minSize={30} className="bg-[#f8f9fa] dark:bg-zinc-950 flex flex-col hidden md:flex">
                     <div className="bg-background/80 backdrop-blur-sm border-b px-4 py-2 shrink-0 flex items-center gap-2">
-    <Eye className="size-4 text-muted-foreground" />
-    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live Preview</span>
-</div>
+                        <Eye className="size-4 text-muted-foreground" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live Preview</span>
+                    </div>
                     
-                    <div className="flex-1 p-8">
+                    <div className="flex-1 p-8 overflow-y-auto">
                         <div className="max-w-4xl mx-auto">
                             <div className="w-full h-[35vh] relative mb-8 rounded-xl overflow-hidden shadow-md bg-muted border">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -59,6 +59,29 @@ const TabExtension = Extension.create({
 
 const lowlight = createLowlight(common)
 
+function formatHTML(html: string) {
+    let formatted = '';
+    let indent = '';
+    const tab = '  ';
+    html.split(/(<\/?[^>]+>)/).forEach(function(node) {
+        if (node.trim() === '') return;
+        const isClosing = node.match(/^<\//);
+        const isSelfClosing = node.match(/<.*\/>/) || node.match(/<(img|br|hr|input|meta|link)/);
+        const isOpening = node.match(/^<[^>]+>$/) && !isClosing && !isSelfClosing;
+
+        if (isClosing) {
+            indent = indent.substring(tab.length);
+        }
+        
+        formatted += indent + node + '\n';
+        
+        if (isOpening) {
+            indent += tab;
+        }
+    });
+    return formatted.trim();
+}
+
 export default function TiptapEditorInner({ content, onChange }: TiptapEditorProps) {
     const [isSourceMode, setIsSourceMode] = useState(false)
     const [sourceHtml, setSourceHtml] = useState('')
@@ -105,21 +128,17 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
         onUpdate: ({ editor }) => {
             initialised.current = true;
             if (!isSourceMode) {
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                timeoutRef.current = setTimeout(() => {
-                    onChange(editor.getHTML());
-                }, 400); 
+                onChange(editor.getHTML());
             }
         },
         onBlur: ({ editor }) => {
             if (!isSourceMode) {
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
                 onChange(editor.getHTML());
             }
         },
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none min-h-[500px] max-w-none p-4 cursor-text',
+                class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none min-h-full max-w-none p-6 cursor-text',
             },
         },
     })
@@ -160,7 +179,7 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
             onChange(editor.getHTML())
             setIsSourceMode(false)
         } else {
-            setSourceHtml(editor.getHTML())
+            setSourceHtml(formatHTML(editor.getHTML()))
             setIsSourceMode(true)
         }
     }
@@ -187,12 +206,14 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
     }
 
     if (!editor) {
-        return <div className="min-h-[500px] border rounded-xl bg-muted/10 animate-pulse" />
+        return <div className="h-full w-full border rounded-xl bg-muted/10 animate-pulse" />
     }
 
     return (
-        <div className="flex flex-col w-full min-h-[500px] border rounded-xl bg-background shadow-sm">
-            <EditorStatsBar editor={editor} />
+        <div className="flex flex-col w-full h-full bg-background relative">
+            <div className="shrink-0">
+                <EditorStatsBar editor={editor} />
+            </div>
 
             <div className="flex justify-between items-center border-b px-4 py-2 bg-muted/30">
                 <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
@@ -238,7 +259,7 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
                 </div>
             )}
 
-            <div className="flex-1 relative">
+            <div className="flex-1 relative overflow-hidden bg-background">
                 {isSourceMode ? (
                     <textarea
                         id="html-source-textarea"
@@ -250,8 +271,8 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
                         spellCheck={false}
                     />
                 ) : (
-                    <div className="h-full overflow-y-auto">
-                        <EditorContent editor={editor} />
+                    <div className="absolute inset-0 overflow-y-auto">
+                        <EditorContent editor={editor} className="min-h-full" />
                     </div>
                 )}
             </div>
