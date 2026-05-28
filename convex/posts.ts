@@ -296,42 +296,48 @@ export const updatePost = mutation({
         isPrivate: v.optional(v.boolean()),
     },
 handler: async (ctx, args) => {
-        const user = await authComponent.safeGetAuthUser(ctx);
-        if (!user) throw new ConvexError('User not authenticated');
+        try {
+            const user = await authComponent.safeGetAuthUser(ctx);
+            if (!user) throw new ConvexError('User not authenticated');
 
-        const existingPost = await ctx.db.get(args.id);
-        if (!existingPost) throw new ConvexError('Post not found');
+            const existingPost = await ctx.db.get(args.id);
+            if (!existingPost) throw new ConvexError('Post not found');
 
-        const isAuthor = existingPost.authorId === user._id;
-        const isCoAuthor = existingPost.coAuthors?.includes(user._id) ?? false;
-        if (!isAuthor && !isCoAuthor) throw new ConvexError('Unauthorized to edit this post');
+            const isAuthor = existingPost.authorId === user._id;
+            const isCoAuthor = existingPost.coAuthors?.includes(user._id) ?? false;
+            if (!isAuthor && !isCoAuthor) throw new ConvexError('Unauthorized to edit this post');
 
-        const { id, ...updates } = args;
-        await ctx.db.patch(id, {
-            ...updates,
-            updatedAt: Date.now() 
-        });
+            const { id, ...updates } = args;
+            await ctx.db.patch(id, {
+                ...updates,
+                updatedAt: Date.now() 
+            });
 
-        // NEW: Resync Edge Table if coAuthors are updated
-        if (updates.coAuthors !== undefined) {
-            // 1. Wipe existing edge relationships
-            const existingLinks = await ctx.db.query("postAuthors")
-                .withIndex("by_post", q => q.eq("postId", id)).collect();
+            // NEW: Resync Edge Table if coAuthors are updated
+            if (updates.coAuthors !== undefined) {
+                // 1. Wipe existing edge relationships
+                const existingLinks = await ctx.db.query("postAuthors")
+                    .withIndex("by_post", q => q.eq("postId", id)).collect();
 
-            for (const link of existingLinks) {
-                await ctx.db.delete(link._id);
+                for (const link of existingLinks) {
+                    await ctx.db.delete(link._id);
+                }
+
+                // 2. Re-insert main author (fallback to user._id if missing on legacy posts)
+                const mainAuthorId = existingPost.authorId || user._id;
+                await ctx.db.insert("postAuthors", { postId: id, userId: mainAuthorId, isMainAuthor: true });
+
+                // 3. Re-insert new co-authors
+                for (const coAuthorId of updates.coAuthors) {
+                    await ctx.db.insert("postAuthors", { postId: id, userId: coAuthorId, isMainAuthor: false });
+                }
             }
 
-            // 2. Re-insert main author
-            await ctx.db.insert("postAuthors", { postId: id, userId: existingPost.authorId, isMainAuthor: true });
-
-            // 3. Re-insert new co-authors
-            for (const coAuthorId of updates.coAuthors) {
-                await ctx.db.insert("postAuthors", { postId: id, userId: coAuthorId, isMainAuthor: false });
-            }
+            return id;
+        } catch (error) {
+            console.error("Error in updatePost:", error);
+            throw error;
         }
-
-        return id;
     }
 });
 
