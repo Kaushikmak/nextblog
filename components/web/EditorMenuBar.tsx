@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { toast } from 'sonner'
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
 
 interface EditorMenuBarProps {
     editor: Editor | null;
@@ -31,6 +33,9 @@ export function EditorMenuBar({ editor }: EditorMenuBarProps) {
     
     const [mediaUrl, setMediaUrl] = useState("");
     const [isUploading, setIsUploading] = useState(false);
+
+    const generateUploadUrl = useMutation(api.posts.getImageUploadURL);
+    const getMediaUrl = useMutation(api.posts.getMediaUrl);
 
     if (!editor) return null;
 
@@ -53,31 +58,42 @@ export function EditorMenuBar({ editor }: EditorMenuBarProps) {
         try {
             setIsUploading(true);
             
-            // Convert file to base64 for standalone functionality
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const result = event.target?.result as string;
-                
-                if (type === 'image') {
-                    editor.chain().focus().setImage({ src: result }).run();
-                    setIsImageOpen(false);
-                } else if (type === 'video') {
-                    editor.chain().focus().insertContent({ 
-                        type: 'customVideo', 
-                        attrs: { src: result } 
-                    }).run();
-                    setIsVideoOpen(false);
-                } else if (type === 'audio') {
-                    editor.chain().focus().insertContent({ 
-                        type: 'customAudio', 
-                        attrs: { src: result } 
-                    }).run();
-                    setIsAudioOpen(false);
-                }
-                
-                toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully`);
-            };
-            reader.readAsDataURL(file);
+            // 1. Get upload URL
+            const postUrl = await generateUploadUrl();
+            
+            // 2. Upload file to Convex storage
+            const result = await fetch(postUrl, {
+                method: "POST",
+                headers: { "Content-Type": file.type },
+                body: file,
+            });
+            
+            if (!result.ok) throw new Error("Failed to upload file");
+            const { storageId } = await result.json();
+            
+            // 3. Get the public URL for the uploaded file
+            const url = await getMediaUrl({ storageId });
+            
+            if (!url) throw new Error("Failed to get media URL");
+            
+            if (type === 'image') {
+                editor.chain().focus().setImage({ src: url }).run();
+                setIsImageOpen(false);
+            } else if (type === 'video') {
+                editor.chain().focus().insertContent({ 
+                    type: 'customVideo', 
+                    attrs: { src: url } 
+                }).run();
+                setIsVideoOpen(false);
+            } else if (type === 'audio') {
+                editor.chain().focus().insertContent({ 
+                    type: 'customAudio', 
+                    attrs: { src: url } 
+                }).run();
+                setIsAudioOpen(false);
+            }
+            
+            toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} uploaded successfully`);
         } catch (error) {
             toast.error(`Failed to upload ${type}`);
             console.error(error);

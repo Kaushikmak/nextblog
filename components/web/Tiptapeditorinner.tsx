@@ -34,6 +34,9 @@ import CodeBlockComponent from './CodeBlockComponent'
 import { VideoNode, AudioNode } from './media-extensions'
 import { Button } from '@/components/ui/button'
 import { FileCode2, Type } from 'lucide-react'
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { toast } from 'sonner'
 
 // Define and export the interface here as the single source of truth
 export interface TiptapEditorProps {
@@ -93,6 +96,37 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
 
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+    const generateUploadUrl = useMutation(api.posts.getImageUploadURL);
+    const getMediaUrl = useMutation(api.posts.getMediaUrl);
+
+    const uploadFile = async (file: File) => {
+        try {
+            const toastId = toast.loading('Uploading image...');
+            const postUrl = await generateUploadUrl();
+            const result = await fetch(postUrl, {
+                method: "POST",
+                headers: { "Content-Type": file.type },
+                body: file,
+            });
+            if (!result.ok) {
+                toast.dismiss(toastId);
+                throw new Error("Failed to upload");
+            }
+            const { storageId } = await result.json();
+            const url = await getMediaUrl({ storageId });
+            if (!url) {
+                toast.dismiss(toastId);
+                throw new Error("URL is null");
+            }
+            toast.success('Image uploaded successfully!', { id: toastId });
+            return url;
+        } catch (e) {
+            toast.error('Failed to upload image');
+            console.error(e);
+            return null;
+        }
+    };
+
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
@@ -108,7 +142,7 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
                 alignments: ['left', 'center', 'right', 'justify'],
             }),
             ImageExt.configure({
-                allowBase64: true,
+                allowBase64: false, // Explicitly disable to force direct URL uploads
                 HTMLAttributes: { class: 'rounded-lg border border-muted' },
             }),
             Youtube.configure({ width: 640, height: 480 }),
@@ -144,6 +178,45 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
             attributes: {
                 class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none min-h-full max-w-none p-6 cursor-text',
             },
+            handleDrop: (view, event, slice, moved) => {
+                if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+                    const file = event.dataTransfer.files[0];
+                    if (file.type.startsWith('image/')) {
+                        event.preventDefault();
+                        const { schema } = view.state;
+                        const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+                        
+                        uploadFile(file).then(url => {
+                            if (url && coordinates) {
+                                const node = schema.nodes.image.create({ src: url });
+                                const transaction = view.state.tr.insert(coordinates.pos, node);
+                                view.dispatch(transaction);
+                            }
+                        });
+                        return true;
+                    }
+                }
+                return false;
+            },
+            handlePaste: (view, event, slice) => {
+                if (event.clipboardData && event.clipboardData.files && event.clipboardData.files[0]) {
+                    const file = event.clipboardData.files[0];
+                    if (file.type.startsWith('image/')) {
+                        event.preventDefault();
+                        const { schema } = view.state;
+                        
+                        uploadFile(file).then(url => {
+                            if (url) {
+                                const node = schema.nodes.image.create({ src: url });
+                                const transaction = view.state.tr.replaceSelectionWith(node);
+                                view.dispatch(transaction);
+                            }
+                        });
+                        return true;
+                    }
+                }
+                return false;
+            }
         },
     })
 
