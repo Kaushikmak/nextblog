@@ -144,6 +144,65 @@ function CreatePostEditor() {
         return () => clearInterval(interval);
     }, [title, content, summary, existingPostId]);
 
+    // Synchronize scrolling between Editor and Preview
+    useEffect(() => {
+        let editorEl: HTMLElement | null = null;
+        let previewEl: HTMLElement | null = null;
+        let isSyncingLeft = false;
+        let isSyncingRight = false;
+
+        const onScrollLeft = () => {
+            if (!editorEl || !previewEl) return;
+            if (isSyncingLeft) {
+                isSyncingLeft = false;
+                return;
+            }
+            isSyncingRight = true;
+            
+            const editorScrollable = editorEl.scrollHeight - editorEl.clientHeight;
+            const previewScrollable = previewEl.scrollHeight - previewEl.clientHeight;
+            
+            if (editorScrollable > 0) {
+                const percentage = editorEl.scrollTop / editorScrollable;
+                previewEl.scrollTop = percentage * previewScrollable;
+            }
+        };
+
+        const onScrollRight = () => {
+            if (!editorEl || !previewEl) return;
+            if (isSyncingRight) {
+                isSyncingRight = false;
+                return;
+            }
+            isSyncingLeft = true;
+            
+            const editorScrollable = editorEl.scrollHeight - editorEl.clientHeight;
+            const previewScrollable = previewEl.scrollHeight - previewEl.clientHeight;
+            
+            if (previewScrollable > 0) {
+                const percentage = previewEl.scrollTop / previewScrollable;
+                editorEl.scrollTop = percentage * editorScrollable;
+            }
+        };
+
+        const attachInterval = setInterval(() => {
+            if (!editorEl) editorEl = document.getElementById('editor-scroll-container');
+            if (!previewEl) previewEl = document.getElementById('preview-scroll-container');
+            
+            if (editorEl && previewEl) {
+                editorEl.addEventListener('scroll', onScrollLeft);
+                previewEl.addEventListener('scroll', onScrollRight);
+                clearInterval(attachInterval);
+            }
+        }, 500);
+
+        return () => {
+            clearInterval(attachInterval);
+            if (editorEl) editorEl.removeEventListener('scroll', onScrollLeft);
+            if (previewEl) previewEl.removeEventListener('scroll', onScrollRight);
+        };
+    }, []);
+
     // Fallback image logic
     const defaultImage = "https://images.unsplash.com/photo-1609743522653-52354461eb27?q=80&w=687&auto=format&fit=crop";
     const previewImageUrl = activeMediaTab === "upload" && selectedFile 
@@ -428,7 +487,7 @@ function CreatePostEditor() {
                         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live Preview</span>
                     </div>
                     
-                    <div className="flex-1 p-8 overflow-y-auto">
+                    <div className="flex-1 p-8 overflow-y-auto" id="preview-scroll-container">
                         <div className="max-w-4xl mx-auto">
                             <div className="w-full h-[35vh] relative mb-8 rounded-xl overflow-hidden shadow-md bg-muted border">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}

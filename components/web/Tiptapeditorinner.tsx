@@ -22,8 +22,12 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { common, createLowlight } from 'lowlight'
+import hljs from 'highlight.js/lib/core'
+import xml from 'highlight.js/lib/languages/xml'
 import { useEffect, useRef, useState } from 'react'
 import { Extension } from '@tiptap/core'
+
+hljs.registerLanguage('html', xml);
 import { EditorStatsBar } from './EditorStatsBar'
 import { EditorMenuBar } from './EditorMenuBar'
 import CodeBlockComponent from './CodeBlockComponent'
@@ -259,19 +263,27 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
                 </div>
             )}
 
-            <div className="flex-1 relative overflow-hidden bg-background">
+            <div className="flex-1 relative overflow-y-auto bg-background" id="editor-scroll-container">
                 {isSourceMode ? (
-                    <textarea
-                        id="html-source-textarea"
-                        value={sourceHtml}
-                        onChange={handleSourceChange}
-                        onKeyDown={handleTextareaTab}
-                        className="absolute inset-0 w-full h-full p-6 bg-zinc-950 text-zinc-50 font-mono text-sm leading-relaxed resize-none focus:outline-none"
-                        placeholder=""
-                        spellCheck={false}
-                    />
+                    <div className="relative min-h-full bg-zinc-950">
+                        <textarea
+                            id="html-source-textarea"
+                            value={sourceHtml}
+                            onChange={handleSourceChange}
+                            onKeyDown={handleTextareaTab}
+                            className="absolute top-0 left-0 w-full h-full p-6 text-transparent caret-white font-mono text-sm leading-relaxed resize-none focus:outline-none bg-transparent z-10 overflow-hidden"
+                            placeholder=""
+                            spellCheck={false}
+                        />
+                        <pre className="relative w-full min-h-full p-6 pointer-events-none z-0 m-0 bg-transparent" aria-hidden="true">
+                            <code 
+                                className="hljs language-html font-mono text-sm leading-relaxed whitespace-pre-wrap break-words block"
+                                dangerouslySetInnerHTML={{ __html: hljs.highlight(sourceHtml || ' ', { language: 'html' }).value }}
+                            />
+                        </pre>
+                    </div>
                 ) : (
-                    <div className="absolute inset-0 overflow-y-auto">
+                    <div className="min-h-full">
                         <EditorContent editor={editor} className="min-h-full" />
                     </div>
                 )}
