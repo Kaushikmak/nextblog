@@ -111,6 +111,19 @@ function enhanceContainer(container: HTMLDivElement) {
         code.className = 'bg-muted text-foreground border border-border rounded px-1.5 py-0.5 text-[0.875em] font-mono whitespace-nowrap'
     })
 
+    // ── Internal Links ────────────────────────────────────────────────────────
+    container.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((a) => {
+        a.removeAttribute('target')
+        a.onclick = (e) => {
+            e.preventDefault()
+            const targetId = a.getAttribute('href')?.slice(1)
+            if (targetId) {
+                document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })
+                history.pushState(null, "", `#${targetId}`)
+            }
+        }
+    })
+
     // ── Headings IDs for Table of Contents ────────────────────────────────────
     container.querySelectorAll<HTMLElement>('h1, h2, h3').forEach((heading) => {
         if (!heading.id && heading.textContent) {
