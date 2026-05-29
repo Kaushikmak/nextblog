@@ -2,7 +2,7 @@
 
 import { Editor } from '@tiptap/react'
 import { 
-    Bold, Italic, Code, Link as LinkIcon, Strikethrough, Underline,
+    Bold, Italic, Code, Link as LinkIcon, Unlink as UnlinkIcon, Strikethrough, Underline,
     AlignCenter, AlignLeft, AlignRight, AlignJustify, Minus, Palette,
     Image as ImageIcon, Youtube, Video as VideoIcon, Mic, Heading1,
     Heading2, Heading3, List, ListOrdered, Quote, Undo, Redo,
@@ -38,6 +38,26 @@ export function EditorMenuBar({ editor }: EditorMenuBarProps) {
     const getMediaUrl = useMutation(api.posts.getMediaUrl);
 
     if (!editor) return null;
+
+    const getHeadings = () => {
+        const headings: { text: string, id: string, level: number }[] = [];
+        editor.state.doc.descendants((node) => {
+            if (node.type.name === 'heading') {
+                const text = node.textContent;
+                const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                if (id) {
+                    headings.push({ text, id, level: node.attrs.level });
+                }
+            }
+        });
+        return headings;
+    };
+
+    const availableHeadings = getHeadings();
+    const headingQuery = linkUrl.startsWith('#') ? linkUrl.slice(1).toLowerCase() : null;
+    const filteredHeadings = headingQuery !== null 
+        ? availableHeadings.filter(h => h.id.includes(headingQuery) || h.text.toLowerCase().includes(headingQuery))
+        : [];
 
     const handleLinkSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -328,35 +348,68 @@ export function EditorMenuBar({ editor }: EditorMenuBarProps) {
             <div className="w-px h-8 bg-border mx-1" />
 
             {/* Link */}
-            <Dialog open={isLinkOpen} onOpenChange={setIsLinkOpen}>
-                <DialogTrigger asChild>
-                    <Button type="button" variant="ghost" size="sm" className={editor.isActive('link') ? 'bg-muted' : ''}>
-                        <LinkIcon className="size-4" />
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Insert Hyperlink</DialogTitle>
-                    </DialogHeader>
+            <div className="flex items-center gap-0.5">
+                <Dialog open={isLinkOpen} onOpenChange={(open) => {
+                    if (open) {
+                        setLinkUrl(editor.getAttributes('link').href || "");
+                    }
+                    setIsLinkOpen(open);
+                }}>
+                    <DialogTrigger asChild>
+                        <Button type="button" variant="ghost" size="sm" className={editor.isActive('link') ? 'bg-muted' : ''}>
+                            <LinkIcon className="size-4" />
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>{editor.isActive('link') ? 'Edit Hyperlink' : 'Insert Hyperlink'}</DialogTitle>
+                        </DialogHeader>
                     <form onSubmit={handleLinkSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="url">URL</Label>
                             <Input 
                                 id="url"
-                                placeholder="https://example.com" 
+                                placeholder="https://example.com or #heading-name" 
                                 value={linkUrl} 
                                 onChange={(e) => setLinkUrl(e.target.value)} 
+                                autoComplete="off"
                             />
+                            {headingQuery !== null && filteredHeadings.length > 0 && (
+                                <div className="mt-2 border rounded-md border-border bg-popover max-h-40 overflow-y-auto shadow-sm">
+                                    {filteredHeadings.map(h => (
+                                        <button
+                                            key={h.id}
+                                            type="button"
+                                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex flex-col"
+                                            onClick={() => {
+                                                setLinkUrl(`#${h.id}`);
+                                            }}
+                                        >
+                                            <span className="font-medium truncate">{h.text}</span>
+                                            <span className="text-xs text-muted-foreground truncate">#{h.id}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                         <div className="flex justify-end gap-2">
                             <Button type="button" variant="outline" onClick={() => setIsLinkOpen(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit">Add Link</Button>
+                            <Button type="submit">{editor.isActive('link') ? 'Update Link' : 'Add Link'}</Button>
                         </div>
                     </form>
                 </DialogContent>
-            </Dialog>
+                </Dialog>
+                
+                {editor.isActive('link') && (
+                    <MenuButton 
+                        onClick={() => editor.chain().focus().unsetLink().run()} 
+                        icon={UnlinkIcon} 
+                        title="Remove Link"
+                    />
+                )}
+            </div>
 
             <div className="w-px h-8 bg-border mx-1" />
 
