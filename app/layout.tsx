@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   verification: {
     google: "OmzJnIQ1e1Pe6kyp3S7DL8AuEn0DuVUX80OCScnJ7io",
   },
-  
+
   category: "technology",
 };
 
@@ -81,20 +81,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased text-[17px] leading-relaxed`}
       >
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <main className="max-w-7xl mx-auto w-full px-4 md:px-6 lg:px-8">
-              <ConvexClientProvider>{children}</ConvexClientProvider>
-            </main>
-            <Toaster richColors  />
-          </ThemeProvider>
-        
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <main className="w-full">
+            <ConvexClientProvider>{children}</ConvexClientProvider>
+          </main>
+          <Toaster richColors />
+        </ThemeProvider>
+
       </body>
     </html>
   );

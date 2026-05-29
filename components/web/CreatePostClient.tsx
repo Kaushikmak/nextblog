@@ -488,7 +488,7 @@ function CreatePostEditor() {
                     </div>
                     
                     <div className="flex-1 p-8 overflow-y-auto" id="preview-scroll-container">
-                        <div className="max-w-4xl mx-auto">
+                        <div className="w-full">
                             <div className="w-full h-[35vh] relative mb-8 rounded-xl overflow-hidden shadow-md bg-muted border">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img 

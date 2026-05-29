@@ -25,6 +25,7 @@ import { common, createLowlight } from 'lowlight'
 import hljs from 'highlight.js/lib/core'
 import xml from 'highlight.js/lib/languages/xml'
 import { useEffect, useRef, useState } from 'react'
+import { useTheme } from 'next-themes'
 import { Extension } from '@tiptap/core'
 
 hljs.registerLanguage('html', xml);
@@ -93,6 +94,10 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
     const [isSourceMode, setIsSourceMode] = useState(false)
     const [sourceHtml, setSourceHtml] = useState('')
     const initialised = useRef(false)
+    
+    const { theme, systemTheme } = useTheme();
+    const currentTheme = theme === "system" ? systemTheme : theme;
+    const isDark = currentTheme === "dark";
 
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -176,7 +181,7 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
         },
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none min-h-full max-w-none p-6 cursor-text font-medium-body [&_li]:my-1 [&_img]:mx-auto [&_img]:block [&_img]:my-6 [&_h1]:font-sans [&_h2]:font-sans [&_h3]:font-sans',
+                class: 'prose prose-xl dark:prose-invert focus:outline-none min-h-full max-w-none p-6 cursor-text font-sans tracking-tight text-zinc-900 dark:text-zinc-100 [&_p]:my-3 [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-0 [&_li>p]:my-0 [&_img]:mx-auto [&_img]:block [&_img]:my-8 [&_img]:max-h-[500px] [&_img]:object-contain [&_h1]:mt-8 [&_h1]:mb-4 [&_h1]:font-sans [&_h1]:tracking-tighter [&_h1]:text-zinc-950 dark:[&_h1]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:font-sans [&_h2]:tracking-tighter [&_h2]:text-zinc-950 dark:[&_h2]:text-white [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:font-sans [&_h3]:text-zinc-900 dark:[&_h3]:text-zinc-100',
             },
             handleDrop: (view, event, slice, moved) => {
                 if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
@@ -288,6 +293,13 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
 
     return (
         <div className="flex flex-col w-full h-full bg-background relative">
+            <link 
+                rel="stylesheet" 
+                href={isDark 
+                    ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" 
+                    : "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+                } 
+            />
             <div className="shrink-0">
                 <EditorStatsBar editor={editor} />
             </div>

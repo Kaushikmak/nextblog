@@ -86,7 +86,7 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
 
 
     return (
-        <div className="max-w-7xl mx-auto py-8 px-4 flex gap-8 animate-in fade-in duration-500">
+        <div className="w-full py-8 px-8 md:px-16 lg:px-24 xl:px-32 flex gap-8 lg:gap-20 xl:gap-28 animate-in fade-in duration-500 justify-center">
             {/* Left sidebar for ToC */}
             <aside className="hidden lg:block w-64 shrink-0">
                 <div className="sticky top-24">
@@ -95,7 +95,7 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 max-w-3xl min-w-0 mx-auto">
+            <div className="flex-1 min-w-0">
                 <Link href="/blog" className={buttonVariants({ variant: "ghost", size: "sm", className: "mb-4" })}>
                     <ArrowLeft className="mr-2 size-4" />
                     back to blog
@@ -178,7 +178,7 @@ export default async function BlogPostPage({ params }: PostIdRouteProps) {
             </div>
 
             {/* Right sidebar (empty) for balance */}
-            <aside className="hidden xl:block w-64 shrink-0">
+            <aside className="hidden lg:block w-64 shrink-0">
             </aside>
         </div>
     );

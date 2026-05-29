@@ -13,48 +13,10 @@ import { SearchInput } from "./searchInput";
 import { cn } from "@/lib/utils";
 
 function MutexIcon() {
-  const [isLocked, setIsLocked] = useState(true);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIsLocked((prev) => !prev);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <div className="relative flex items-center justify-center w-8 h-8 bg-primary/10 rounded border border-primary/20 shrink-0">
-      {isLocked ? (
-        <Lock className="size-4 text-primary animate-in zoom-in duration-300" />
-      ) : (
-        <Unlock className="size-4 text-primary animate-in zoom-in duration-300" />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-full w-full animate-pulse pointer-events-none" />
+      <Lock className="size-4 text-primary" />
     </div>
-  );
-}
-
-function Typewriter({ text, speed = 100 }: { text: string; speed?: number }) {
-  const [displayText, setDisplayText] = useState("");
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (index < text.length) {
-      const timeout = setTimeout(() => {
-        setDisplayText((prev) => prev + text[index]);
-        setIndex((prev) => prev + 1);
-      }, speed);
-      return () => clearTimeout(timeout);
-    }
-  }, [index, text, speed]);
-
-  return (
-    <span className="font-mono">
-      <span className="text-muted-foreground mr-1">~</span>
-      <span className="text-primary font-bold">$</span>{" "}
-      {displayText.slice(0, 5)}
-      <span className="text-primary">{displayText.slice(5)}</span>
-    </span>
   );
 }
 
@@ -93,19 +55,14 @@ export function Navbar() {
 
   return (
     <nav className="border-b bg-background sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16">
+        <div className="flex justify-between items-center h-20">
           
           <div className="flex items-center gap-6">
-            {/* FIXED LOGO CONTAINER: 
-                w-[180px] md:w-[240px] ensures the layout stays fixed while text types.
-                shrink-0 prevents the container itself from being squashed by nav links.
-            */}
-            <Link href="/" className="shrink-0 flex items-center gap-3 w-[180px] md:w-[240px] overflow-hidden">
+            <Link href="/" className="shrink-0 flex items-center gap-3 overflow-hidden">
               <MutexIcon />
               <div className="text-xl md:text-2xl font-bold flex items-center shrink-0">
-                <Typewriter text="MutexBlog" />
-                <span className="ml-1 w-2 h-6 bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary))] " />
+                <span className="font-mono">Mutex<span className="text-primary">Blog</span></span>
               </div>
             </Link>
 

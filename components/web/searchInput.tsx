@@ -90,11 +90,13 @@ export function SearchInput() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="group flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground shadow-sm transition-all hover:border-input hover:text-foreground hover:shadow-md"
+        className="group flex items-center justify-between gap-2 w-full sm:w-48 md:w-64 lg:w-80 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground shadow-sm transition-all hover:border-input hover:text-foreground hover:shadow-md"
       >
-        <Search className="size-3.5" />
-        <span className="hidden sm:inline">Search</span>
-        <span className="hidden sm:flex items-center gap-0.5 ml-1">
+        <div className="flex items-center gap-2">
+            <Search className="size-3.5" />
+            <span className="hidden sm:inline">Search articles...</span>
+        </div>
+        <span className="hidden sm:flex items-center gap-0.5 ml-1 shrink-0">
           <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">Ctrl</kbd>
           <kbd className="inline-flex h-5 items-center rounded border border-border bg-muted px-1.5 font-mono text-[10px]">K</kbd>
         </span>

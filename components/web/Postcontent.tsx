@@ -14,10 +14,11 @@
  * - Copy buttons that survive re-renders
  */
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import hljs from 'highlight.js'
 import DOMPurify from 'isomorphic-dompurify';
 import React from 'react';
+import { useTheme } from 'next-themes';
 
 interface PostContentProps {
     html: string
@@ -60,36 +61,24 @@ function enhanceContainer(container: HTMLDivElement) {
 
         // Wrapper
         const wrapper = document.createElement('div')
-        wrapper.className = 'my-6 rounded-xl border border-zinc-700 overflow-hidden shadow-sm not-prose'
+        wrapper.className = 'my-6 rounded-xl border border-border overflow-hidden shadow-sm not-prose'
 
         // Header
         const header = document.createElement('div')
-        header.className = 'flex items-center justify-between px-4 py-2.5 bg-zinc-800 border-b border-zinc-700'
+        header.className = 'flex items-center justify-between px-4 py-2 bg-muted border-b border-border'
 
         const left = document.createElement('div')
-        left.className = 'flex items-center gap-3'
-        left.innerHTML = `
-            <div style="display:flex;align-items:center;gap:6px">
-                <div style="width:12px;height:12px;border-radius:50%;background:#ef4444"></div>
-                <div style="width:12px;height:12px;border-radius:50%;background:#eab308"></div>
-                <div style="width:12px;height:12px;border-radius:50%;background:#22c55e"></div>
-            </div>
-            <span style="font-size:12px;font-family:ui-monospace,monospace;color:#d4d4d8;
-                background:#3f3f46;border:1px solid #52525b;border-radius:4px;
-                padding:1px 8px;user-select:none">${lang}</span>
-        `
+        left.innerHTML = `<span class="text-xs font-mono text-muted-foreground uppercase tracking-wider font-semibold">${lang}</span>`
 
         // Copy button
         const copyBtn = document.createElement('button')
         copyBtn.type = 'button'
-        copyBtn.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:12px;color:#a1a1aa;background:transparent;border:none;cursor:pointer;padding:4px 8px;border-radius:4px;transition:color 0.15s'
+        copyBtn.className = 'flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors'
         const setCopyDefault = () => { copyBtn.innerHTML = `${COPY_ICON}<span>Copy</span>` }
         setCopyDefault()
-        copyBtn.addEventListener('mouseenter', () => { copyBtn.style.background = '#3f3f46'; copyBtn.style.color = '#f4f4f5' })
-        copyBtn.addEventListener('mouseleave', () => { copyBtn.style.background = 'transparent'; copyBtn.style.color = '#a1a1aa' })
         copyBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(raw)
-            copyBtn.innerHTML = `${CHECK_ICON}<span style="color:#4ade80">Copied!</span>`
+            copyBtn.innerHTML = `${CHECK_ICON}<span class="text-green-500">Copied!</span>`
             setTimeout(setCopyDefault, 2000)
         })
 
@@ -98,7 +87,7 @@ function enhanceContainer(container: HTMLDivElement) {
 
         // Code area
         const codeArea = document.createElement('div')
-        codeArea.style.background = '#09090b'
+        codeArea.className = 'bg-background'
         pre.style.cssText = 'margin:0;padding:16px;overflow-x:auto;font-size:14px;font-family:ui-monospace,monospace;line-height:1.6;background:transparent'
 
         pre.parentNode?.insertBefore(wrapper, pre)
@@ -119,17 +108,7 @@ function enhanceContainer(container: HTMLDivElement) {
             code.innerHTML = hljs.highlightAuto(raw).value
         } catch { /* leave as-is */ }
 
-        code.style.cssText = [
-            'display:inline',
-            'background:#1e1e2e',
-            'color:#cdd6f4',
-            'border:1px solid #313244',
-            'border-radius:4px',
-            'padding:1px 6px',
-            'font-size:0.875em',
-            'font-family:ui-monospace,SFMono-Regular,Menlo,monospace',
-            'white-space:nowrap',
-        ].join(';')
+        code.className = 'bg-muted text-foreground border border-border rounded px-1.5 py-0.5 text-[0.875em] font-mono whitespace-nowrap'
     })
 
     // ── Headings IDs for Table of Contents ────────────────────────────────────
@@ -146,6 +125,11 @@ function enhanceContainer(container: HTMLDivElement) {
 export function PostContent({ html, className = '' }: PostContentProps) {
     const ref = useRef<HTMLDivElement>(null)
     const lastHtml = useRef<string>('')
+    const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+    const { theme, systemTheme } = useTheme();
+    
+    const currentTheme = theme === "system" ? systemTheme : theme;
+    const isDark = currentTheme === "dark";
 
     useEffect(() => {
         const container = ref.current
@@ -175,26 +159,55 @@ export function PostContent({ html, className = '' }: PostContentProps) {
             lastHtml.current = html;
         }
 
-        // Always re-run enhancement
-        enhanceContainer(container)
-    })
+            // Always re-run enhancement
+            enhanceContainer(container)
+
+            // Setup lightbox listeners for images
+            container.querySelectorAll('img').forEach((img) => {
+                img.style.cursor = 'zoom-in';
+                img.onclick = () => setLightboxImage(img.src);
+            });
+    }, [html])
 
     return (
-        <div
-            ref={ref}
-            className={[
-                'prose dark:prose-invert max-w-none font-medium-body',
-                '[&_h1]:text-4xl [&_h1]:font-extrabold [&_h1]:tracking-tight [&_h1]:mt-8 [&_h1]:mb-4 [&_h1]:font-sans',
-                '[&_h2]:text-3xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:font-sans',
-                '[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:font-sans',
-                '[&_p]:leading-relaxed [&_p]:my-4',
-                '[&_blockquote]:border-l-4 [&_blockquote]:border-zinc-400 [&_blockquote]:pl-4 [&_blockquote]:italic',
-                '[&_a]:text-blue-500 [&_a]:underline [&_a]:underline-offset-2',
-                '[&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1',
-                '[&_img]:rounded-lg [&_img]:border [&_img]:border-muted [&_img]:mx-auto [&_img]:block [&_img]:my-6',
-                '[&_.not-prose]:!mt-6',
-                className,
-            ].join(' ')}
-        />
+        <>
+            <link 
+                rel="stylesheet" 
+                href={isDark 
+                    ? "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" 
+                    : "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+                } 
+            />
+            <div
+                ref={ref}
+                className={[
+                    'prose prose-xl dark:prose-invert max-w-none font-sans tracking-tight text-zinc-900 dark:text-zinc-100',
+                    '[&_h1]:text-6xl [&_h1]:font-extrabold [&_h1]:tracking-tighter [&_h1]:mt-8 [&_h1]:mb-4 [&_h1]:font-sans [&_h1]:text-zinc-950 dark:[&_h1]:text-white',
+                    '[&_h2]:text-5xl [&_h2]:font-bold [&_h2]:tracking-tighter [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:font-sans [&_h2]:text-zinc-950 dark:[&_h2]:text-white',
+                    '[&_h3]:text-4xl [&_h3]:font-semibold [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:font-sans [&_h3]:text-zinc-900 dark:[&_h3]:text-zinc-100',
+                    '[&_p]:leading-relaxed [&_p]:my-3',
+                    '[&_blockquote]:border-l-4 [&_blockquote]:border-zinc-400 [&_blockquote]:pl-4 [&_blockquote]:italic',
+                    '[&_a]:text-blue-500 [&_a]:underline [&_a]:underline-offset-2',
+                    '[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2 [&_li]:my-0 [&_li>p]:my-0',
+                    '[&_img]:rounded-lg [&_img]:border [&_img]:border-muted [&_img]:mx-auto [&_img]:block [&_img]:my-8 [&_img]:max-h-[500px] [&_img]:object-contain',
+                    '[&_.not-prose]:!mt-8',
+                    className,
+                ].join(' ')}
+            />
+            
+            {/* Lightbox Overlay */}
+            {lightboxImage && (
+                <div 
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 cursor-zoom-out animate-in fade-in duration-200"
+                    onClick={() => setLightboxImage(null)}
+                >
+                    <img 
+                        src={lightboxImage} 
+                        className="max-w-full max-h-full object-contain rounded-md" 
+                        alt="Fullscreen view" 
+                    />
+                </div>
+            )}
+        </>
     )
 }
