@@ -176,7 +176,7 @@ export default function TiptapEditorInner({ content, onChange }: TiptapEditorPro
         },
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none min-h-full max-w-none p-6 cursor-text',
+                class: 'prose dark:prose-invert prose-sm sm:prose lg:prose-lg xl:prose-2xl focus:outline-none min-h-full max-w-none p-6 cursor-text font-medium-body [&_li]:my-1 [&_img]:mx-auto [&_img]:block [&_img]:my-6 [&_h1]:font-sans [&_h2]:font-sans [&_h3]:font-sans',
             },
             handleDrop: (view, event, slice, moved) => {
                 if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {

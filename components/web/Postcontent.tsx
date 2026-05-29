@@ -131,6 +131,16 @@ function enhanceContainer(container: HTMLDivElement) {
             'white-space:nowrap',
         ].join(';')
     })
+
+    // ── Headings IDs for Table of Contents ────────────────────────────────────
+    container.querySelectorAll<HTMLElement>('h1, h2, h3').forEach((heading) => {
+        if (!heading.id && heading.textContent) {
+            heading.id = heading.textContent
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)+/g, '');
+        }
+    })
 }
 
 export function PostContent({ html, className = '' }: PostContentProps) {
@@ -148,11 +158,16 @@ export function PostContent({ html, className = '' }: PostContentProps) {
                 ALLOWED_TAGS: [
                     'p', 'b', 'i', 'em', 'strong', 'a', 
                     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                    'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'br', 'hr', 'img'
+                    'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'br', 'hr', 'img',
+                    'u', 'mark', 'video', 'audio', 'source', 'iframe'
                 ],
                 // We MUST allow 'class' so Tiptap's language-xx classes survive for hljs
-                // 'style' is explicitly omitted to prevent CSS injection
-                ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target', 'class'], 
+                // 'style' is allowed to support text alignment and color.
+                ALLOWED_ATTR: [
+                    'href', 'src', 'alt', 'title', 'target', 'class', 
+                    'style', 'id', 'allowfullscreen', 'frameborder', 
+                    'controls', 'type'
+                ], 
                 ALLOW_DATA_ATTR: false, // Prevents any smuggled dataset payloads
             });
 
@@ -168,15 +183,15 @@ export function PostContent({ html, className = '' }: PostContentProps) {
         <div
             ref={ref}
             className={[
-                'prose dark:prose-invert max-w-none',
-                '[&_h1]:text-4xl [&_h1]:font-extrabold [&_h1]:tracking-tight [&_h1]:mt-8 [&_h1]:mb-4',
-                '[&_h2]:text-3xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:mt-8 [&_h2]:mb-3',
-                '[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2',
-                '[&_p]:leading-7 [&_p]:my-4',
+                'prose dark:prose-invert max-w-none font-medium-body',
+                '[&_h1]:text-4xl [&_h1]:font-extrabold [&_h1]:tracking-tight [&_h1]:mt-8 [&_h1]:mb-4 [&_h1]:font-sans',
+                '[&_h2]:text-3xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:font-sans',
+                '[&_h3]:text-2xl [&_h3]:font-semibold [&_h3]:mt-6 [&_h3]:mb-2 [&_h3]:font-sans',
+                '[&_p]:leading-relaxed [&_p]:my-4',
                 '[&_blockquote]:border-l-4 [&_blockquote]:border-zinc-400 [&_blockquote]:pl-4 [&_blockquote]:italic',
                 '[&_a]:text-blue-500 [&_a]:underline [&_a]:underline-offset-2',
-                '[&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6',
-                '[&_img]:rounded-lg [&_img]:border [&_img]:border-muted',
+                '[&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1',
+                '[&_img]:rounded-lg [&_img]:border [&_img]:border-muted [&_img]:mx-auto [&_img]:block [&_img]:my-6',
                 '[&_.not-prose]:!mt-6',
                 className,
             ].join(' ')}

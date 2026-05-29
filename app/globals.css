@@ -125,7 +125,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.font-medium-body {
+  font-family: charter, Georgia, Cambria, "Times New Roman", Times, serif;
 }
